@@ -1,0 +1,33 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Node / web
+node_modules/
+dist/
+coverage/
+.vite/
+*.tsbuildinfo
+
+# Rust / Tauri
+target/
+src-tauri/gen/schemas/
+
+# Env and secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+
+# Claude Code local-only settings
+.claude/settings.local.json
