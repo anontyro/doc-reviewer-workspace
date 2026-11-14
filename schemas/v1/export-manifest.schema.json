@@ -1,0 +1,201 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ExportManifest",
+  "type": "object",
+  "properties": {
+    "created_at": {
+      "type": "string"
+    },
+    "documents": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ManifestDocument"
+      }
+    },
+    "export_id": {
+      "$ref": "#/$defs/ExportId"
+    },
+    "project_id": {
+      "$ref": "#/$defs/ProjectId"
+    },
+    "schema_version": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "export_id",
+    "project_id",
+    "created_at",
+    "documents"
+  ],
+  "$defs": {
+    "AnchorConfidence": {
+      "description": "How sure the app is that an anchor still points at the intended passage (PRD §6.3).\nRecommended values, not confirmed scope (decision 0002).",
+      "type": "string",
+      "enum": [
+        "resolved",
+        "ambiguous",
+        "orphaned"
+      ]
+    },
+    "AnnotationAction": {
+      "description": "Recommended values (PRD §6.2), not confirmed scope (decision 0002).",
+      "type": "string",
+      "enum": [
+        "comment",
+        "replace",
+        "remove",
+        "expand",
+        "question",
+        "approve"
+      ]
+    },
+    "AnnotationId": {
+      "type": "string",
+      "pattern": "^rev_.+$"
+    },
+    "AnnotationStatus": {
+      "description": "Recommended values (PRD §6.2). Export inclusion is not a status.",
+      "type": "string",
+      "enum": [
+        "open",
+        "resolved",
+        "superseded"
+      ]
+    },
+    "DocumentId": {
+      "type": "string",
+      "pattern": "^doc_.+$"
+    },
+    "ExportId": {
+      "type": "string",
+      "pattern": "^exp_.+$"
+    },
+    "ManifestAnnotation": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "$ref": "#/$defs/AnnotationAction"
+        },
+        "id": {
+          "$ref": "#/$defs/AnnotationId"
+        },
+        "status": {
+          "$ref": "#/$defs/AnnotationStatus"
+        },
+        "target": {
+          "$ref": "#/$defs/ManifestTarget"
+        },
+        "user_instruction": {
+          "description": "The user's comment, verbatim.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "action",
+        "status",
+        "user_instruction",
+        "target"
+      ]
+    },
+    "ManifestDocument": {
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ManifestAnnotation"
+          }
+        },
+        "document_id": {
+          "$ref": "#/$defs/DocumentId"
+        },
+        "relative_path": {
+          "type": "string"
+        },
+        "sha256": {
+          "description": "sha256 (hex) of the exported source bytes.",
+          "type": "string"
+        },
+        "version_id": {
+          "$ref": "#/$defs/VersionId"
+        }
+      },
+      "required": [
+        "document_id",
+        "version_id",
+        "relative_path",
+        "sha256",
+        "annotations"
+      ]
+    },
+    "ManifestTarget": {
+      "description": "Line numbers are generated against the exact exported version and are never the sole identity (PRD §6.3).",
+      "type": "object",
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/AnchorConfidence"
+        },
+        "exact": {
+          "type": "string"
+        },
+        "heading_path": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "prefix": {
+          "type": "string"
+        },
+        "source_line_end": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "source_line_start": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint32",
+          "minimum": 0
+        },
+        "suffix": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/TargetKind"
+        }
+      },
+      "required": [
+        "type",
+        "exact",
+        "prefix",
+        "suffix",
+        "heading_path",
+        "confidence"
+      ]
+    },
+    "ProjectId": {
+      "type": "string",
+      "pattern": "^proj_.+$"
+    },
+    "TargetKind": {
+      "description": "Target kind in the manifest. Only text quotes exist until PDF support (F5).",
+      "type": "string",
+      "enum": [
+        "text_quote"
+      ]
+    },
+    "VersionId": {
+      "type": "string",
+      "pattern": "^ver_.+$"
+    }
+  }
+}

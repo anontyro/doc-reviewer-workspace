@@ -1,0 +1,427 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DomainSchemas",
+  "description": "Root used only to emit one schema holding every entity under `$defs`. Never serialised.",
+  "type": "object",
+  "properties": {
+    "annotation": {
+      "$ref": "#/$defs/Annotation"
+    },
+    "document": {
+      "$ref": "#/$defs/Document"
+    },
+    "document_version": {
+      "$ref": "#/$defs/DocumentVersion"
+    },
+    "export_snapshot": {
+      "$ref": "#/$defs/ExportSnapshot"
+    },
+    "library_entry": {
+      "$ref": "#/$defs/LibraryEntry"
+    },
+    "project": {
+      "$ref": "#/$defs/Project"
+    },
+    "review_round": {
+      "$ref": "#/$defs/ReviewRound"
+    }
+  },
+  "required": [
+    "project",
+    "document",
+    "document_version",
+    "review_round",
+    "annotation",
+    "export_snapshot",
+    "library_entry"
+  ],
+  "$defs": {
+    "Anchor": {
+      "type": "object",
+      "properties": {
+        "confidence": {
+          "$ref": "#/$defs/AnchorConfidence"
+        },
+        "exact": {
+          "description": "The exact selected passage, verbatim.",
+          "type": "string"
+        },
+        "heading_path": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "prefix": {
+          "type": "string"
+        },
+        "source_hash": {
+          "description": "sha256 (hex) of the document version the anchor was made against.",
+          "type": "string"
+        },
+        "source_range": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceRange"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "suffix": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "exact",
+        "prefix",
+        "suffix",
+        "heading_path",
+        "source_hash",
+        "confidence"
+      ]
+    },
+    "AnchorConfidence": {
+      "description": "How sure the app is that an anchor still points at the intended passage (PRD §6.3).\nRecommended values, not confirmed scope (decision 0002).",
+      "type": "string",
+      "enum": [
+        "resolved",
+        "ambiguous",
+        "orphaned"
+      ]
+    },
+    "Annotation": {
+      "type": "object",
+      "properties": {
+        "action_type": {
+          "$ref": "#/$defs/AnnotationAction"
+        },
+        "anchor": {
+          "$ref": "#/$defs/Anchor"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "id": {
+          "$ref": "#/$defs/AnnotationId"
+        },
+        "replacement_text": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "round_id": {
+          "$ref": "#/$defs/RoundId"
+        },
+        "schema_version": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/AnnotationStatus"
+        },
+        "text": {
+          "description": "The user's comment, stored and exported verbatim.",
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "round_id",
+        "action_type",
+        "text",
+        "anchor",
+        "status",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "AnnotationAction": {
+      "description": "Recommended values (PRD §6.2), not confirmed scope (decision 0002).",
+      "type": "string",
+      "enum": [
+        "comment",
+        "replace",
+        "remove",
+        "expand",
+        "question",
+        "approve"
+      ]
+    },
+    "AnnotationId": {
+      "type": "string",
+      "pattern": "^rev_.+$"
+    },
+    "AnnotationStatus": {
+      "description": "Recommended values (PRD §6.2). Export inclusion is not a status.",
+      "type": "string",
+      "enum": [
+        "open",
+        "resolved",
+        "superseded"
+      ]
+    },
+    "Document": {
+      "type": "object",
+      "properties": {
+        "active_version_id": {
+          "$ref": "#/$defs/VersionId"
+        },
+        "format": {
+          "$ref": "#/$defs/DocumentFormat"
+        },
+        "id": {
+          "$ref": "#/$defs/DocumentId"
+        },
+        "project_id": {
+          "$ref": "#/$defs/ProjectId"
+        },
+        "relative_path": {
+          "type": "string"
+        },
+        "schema_version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "project_id",
+        "relative_path",
+        "format",
+        "active_version_id"
+      ]
+    },
+    "DocumentFormat": {
+      "type": "string",
+      "enum": [
+        "markdown",
+        "pdf"
+      ]
+    },
+    "DocumentId": {
+      "type": "string",
+      "pattern": "^doc_.+$"
+    },
+    "DocumentVersion": {
+      "type": "object",
+      "properties": {
+        "content_hash": {
+          "description": "sha256 (hex) of the snapshot bytes.",
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "document_id": {
+          "$ref": "#/$defs/DocumentId"
+        },
+        "id": {
+          "$ref": "#/$defs/VersionId"
+        },
+        "origin": {
+          "description": "Free text until F4 (T-011) defines the values. The PRD names the field but not its values.",
+          "type": "string"
+        },
+        "schema_version": {
+          "type": "string"
+        },
+        "snapshot_path": {
+          "type": "string"
+        },
+        "version_number": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "document_id",
+        "version_number",
+        "content_hash",
+        "snapshot_path",
+        "created_at",
+        "origin"
+      ]
+    },
+    "ExportId": {
+      "type": "string",
+      "pattern": "^exp_.+$"
+    },
+    "ExportSnapshot": {
+      "type": "object",
+      "properties": {
+        "annotation_ids": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/AnnotationId"
+          }
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "document_version_refs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/VersionId"
+          }
+        },
+        "format": {
+          "description": "Free text until F4 (T-012/T-013): copied prompt or review package.",
+          "type": "string"
+        },
+        "id": {
+          "$ref": "#/$defs/ExportId"
+        },
+        "payload_hash": {
+          "type": "string"
+        },
+        "relative_output_path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "schema_version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "created_at",
+        "format",
+        "document_version_refs",
+        "annotation_ids",
+        "payload_hash"
+      ]
+    },
+    "LibraryEntry": {
+      "type": "object",
+      "properties": {
+        "last_opened_at": {
+          "type": "string"
+        },
+        "local_index_path": {
+          "type": "string"
+        },
+        "project_id": {
+          "$ref": "#/$defs/ProjectId"
+        },
+        "schema_version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "project_id",
+        "last_opened_at",
+        "local_index_path"
+      ]
+    },
+    "Project": {
+      "type": "object",
+      "properties": {
+        "created_at": {
+          "type": "string"
+        },
+        "id": {
+          "$ref": "#/$defs/ProjectId"
+        },
+        "name": {
+          "type": "string"
+        },
+        "root_path": {
+          "type": "string"
+        },
+        "schema_version": {
+          "type": "string"
+        },
+        "updated_at": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "name",
+        "root_path",
+        "created_at",
+        "updated_at"
+      ]
+    },
+    "ProjectId": {
+      "type": "string",
+      "pattern": "^proj_.+$"
+    },
+    "ReviewRound": {
+      "type": "object",
+      "properties": {
+        "completed_at": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "document_version_id": {
+          "$ref": "#/$defs/VersionId"
+        },
+        "id": {
+          "$ref": "#/$defs/RoundId"
+        },
+        "schema_version": {
+          "type": "string"
+        },
+        "state": {
+          "description": "Free text until F4 (T-011) defines the values. The PRD names the field but not its values.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "id",
+        "document_version_id",
+        "state",
+        "created_at"
+      ]
+    },
+    "RoundId": {
+      "type": "string",
+      "pattern": "^rnd_.+$"
+    },
+    "SourceRange": {
+      "description": "Derived helper, never the sole identity of a target. Units are fixed by decision 0005 after the F1 spike.",
+      "type": "object",
+      "properties": {
+        "end": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        },
+        "start": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ]
+    },
+    "VersionId": {
+      "type": "string",
+      "pattern": "^ver_.+$"
+    }
+  }
+}
