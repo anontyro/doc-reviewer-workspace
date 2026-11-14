@@ -1,0 +1,372 @@
+[
+  {
+    "name": "Project: missing schema_version",
+    "type": "Project",
+    "value": {
+      "id": "proj_001",
+      "name": "Colony Management Game",
+      "root_path": "/Users/me/colony",
+      "created_at": "2026-11-06T00:00:00Z",
+      "updated_at": "2026-11-06T00:00:00Z"
+    }
+  },
+  {
+    "name": "Project: id with wrong prefix",
+    "type": "Project",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "project_001",
+      "name": "Colony Management Game",
+      "root_path": "/Users/me/colony",
+      "created_at": "2026-11-06T00:00:00Z",
+      "updated_at": "2026-11-06T00:00:00Z"
+    }
+  },
+  {
+    "name": "Project: missing name",
+    "type": "Project",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "proj_001",
+      "root_path": "/Users/me/colony",
+      "created_at": "2026-11-06T00:00:00Z",
+      "updated_at": "2026-11-06T00:00:00Z"
+    }
+  },
+  {
+    "name": "Document: unsupported format",
+    "type": "Document",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "doc_001",
+      "project_id": "proj_001",
+      "relative_path": "product-requirements.md",
+      "format": "docx",
+      "active_version_id": "ver_002"
+    }
+  },
+  {
+    "name": "DocumentVersion: negative version_number",
+    "type": "DocumentVersion",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "ver_002",
+      "document_id": "doc_001",
+      "version_number": -1,
+      "content_hash": "3bde25aa196f34a2b1115bf8c6191d69955672827927520142d3c2cef49f2e9e",
+      "snapshot_path": ".review-workspace/versions/ver_002.md",
+      "created_at": "2026-11-06T00:00:00Z",
+      "origin": "imported"
+    }
+  },
+  {
+    "name": "DocumentVersion: missing content_hash",
+    "type": "DocumentVersion",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "ver_002",
+      "document_id": "doc_001",
+      "version_number": 2,
+      "snapshot_path": ".review-workspace/versions/ver_002.md",
+      "created_at": "2026-11-06T00:00:00Z",
+      "origin": "imported"
+    }
+  },
+  {
+    "name": "ReviewRound: missing document_version_id",
+    "type": "ReviewRound",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "rnd_001",
+      "state": "open",
+      "created_at": "2026-11-06T00:00:00Z"
+    }
+  },
+  {
+    "name": "LibraryEntry: project_id with wrong prefix",
+    "type": "LibraryEntry",
+    "value": {
+      "schema_version": "1.0.0",
+      "project_id": "doc_001",
+      "last_opened_at": "2026-11-06T00:00:00Z",
+      "local_index_path": "/Users/me/Library/index.sqlite"
+    }
+  },
+  {
+    "name": "Annotation: unknown action_type",
+    "type": "Annotation",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "rev_014",
+      "round_id": "rnd_001",
+      "action_type": "rewrite",
+      "text": "Remove the external dependency; local auth is enough.",
+      "replacement_text": "Local auth is sufficient.",
+      "anchor": {
+        "exact": "The system must use an external identity broker.",
+        "prefix": "Authentication should be straightforward.",
+        "suffix": "",
+        "heading_path": [
+          "Architecture",
+          "Authentication"
+        ],
+        "source_range": {
+          "start": 120,
+          "end": 168
+        },
+        "source_hash": "3bde25aa196f34a2b1115bf8c6191d69955672827927520142d3c2cef49f2e9e",
+        "confidence": "resolved"
+      },
+      "status": "open",
+      "created_at": "2026-11-06T00:00:00Z",
+      "updated_at": "2026-11-06T00:00:00Z"
+    }
+  },
+  {
+    "name": "Annotation: unknown status",
+    "type": "Annotation",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "rev_014",
+      "round_id": "rnd_001",
+      "action_type": "replace",
+      "text": "Remove the external dependency; local auth is enough.",
+      "replacement_text": "Local auth is sufficient.",
+      "anchor": {
+        "exact": "The system must use an external identity broker.",
+        "prefix": "Authentication should be straightforward.",
+        "suffix": "",
+        "heading_path": [
+          "Architecture",
+          "Authentication"
+        ],
+        "source_range": {
+          "start": 120,
+          "end": 168
+        },
+        "source_hash": "3bde25aa196f34a2b1115bf8c6191d69955672827927520142d3c2cef49f2e9e",
+        "confidence": "resolved"
+      },
+      "status": "Open",
+      "created_at": "2026-11-06T00:00:00Z",
+      "updated_at": "2026-11-06T00:00:00Z"
+    }
+  },
+  {
+    "name": "Annotation: anchor missing exact",
+    "type": "Annotation",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "rev_014",
+      "round_id": "rnd_001",
+      "action_type": "replace",
+      "text": "Remove the external dependency; local auth is enough.",
+      "replacement_text": "Local auth is sufficient.",
+      "anchor": {
+        "prefix": "Authentication should be straightforward.",
+        "suffix": "",
+        "heading_path": [
+          "Architecture",
+          "Authentication"
+        ],
+        "source_range": {
+          "start": 120,
+          "end": 168
+        },
+        "source_hash": "3bde25aa196f34a2b1115bf8c6191d69955672827927520142d3c2cef49f2e9e",
+        "confidence": "resolved"
+      },
+      "status": "open",
+      "created_at": "2026-11-06T00:00:00Z",
+      "updated_at": "2026-11-06T00:00:00Z"
+    }
+  },
+  {
+    "name": "Annotation: anchor unknown confidence",
+    "type": "Annotation",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "rev_014",
+      "round_id": "rnd_001",
+      "action_type": "replace",
+      "text": "Remove the external dependency; local auth is enough.",
+      "replacement_text": "Local auth is sufficient.",
+      "anchor": {
+        "exact": "The system must use an external identity broker.",
+        "prefix": "Authentication should be straightforward.",
+        "suffix": "",
+        "heading_path": [
+          "Architecture",
+          "Authentication"
+        ],
+        "source_range": {
+          "start": 120,
+          "end": 168
+        },
+        "source_hash": "3bde25aa196f34a2b1115bf8c6191d69955672827927520142d3c2cef49f2e9e",
+        "confidence": "certain"
+      },
+      "status": "open",
+      "created_at": "2026-11-06T00:00:00Z",
+      "updated_at": "2026-11-06T00:00:00Z"
+    }
+  },
+  {
+    "name": "Annotation: missing anchor",
+    "type": "Annotation",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "rev_014",
+      "round_id": "rnd_001",
+      "action_type": "replace",
+      "text": "Remove the external dependency; local auth is enough.",
+      "replacement_text": "Local auth is sufficient.",
+      "status": "open",
+      "created_at": "2026-11-06T00:00:00Z",
+      "updated_at": "2026-11-06T00:00:00Z"
+    }
+  },
+  {
+    "name": "ExportSnapshot: annotation id with wrong prefix",
+    "type": "ExportSnapshot",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "exp_001",
+      "created_at": "2026-11-06T00:00:00Z",
+      "format": "copy_prompt",
+      "document_version_refs": [
+        "ver_002"
+      ],
+      "annotation_ids": [
+        "ver_001"
+      ],
+      "payload_hash": "3bde25aa196f34a2b1115bf8c6191d69955672827927520142d3c2cef49f2e9e"
+    }
+  },
+  {
+    "name": "ExportManifest: unknown target type",
+    "type": "ExportManifest",
+    "value": {
+      "schema_version": "1.0.0",
+      "export_id": "exp_001",
+      "project_id": "proj_001",
+      "created_at": "2026-11-06T00:00:00Z",
+      "documents": [
+        {
+          "document_id": "doc_001",
+          "version_id": "ver_002",
+          "relative_path": "product-requirements.md",
+          "sha256": "3bde25aa196f34a2b1115bf8c6191d69955672827927520142d3c2cef49f2e9e",
+          "annotations": [
+            {
+              "id": "rev_014",
+              "action": "replace",
+              "status": "open",
+              "user_instruction": "Remove the external dependency; local auth is enough.",
+              "target": {
+                "type": "pdf_region",
+                "exact": "The system must use an external identity broker.",
+                "prefix": "Authentication should be straightforward.",
+                "suffix": "",
+                "heading_path": [
+                  "Architecture",
+                  "Authentication"
+                ],
+                "source_line_start": 128,
+                "source_line_end": 134,
+                "confidence": "resolved"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "ExportManifest: project id with wrong prefix",
+    "type": "ExportManifest",
+    "value": {
+      "schema_version": "1.0.0",
+      "export_id": "exp_001",
+      "project_id": "project_001",
+      "created_at": "2026-11-06T00:00:00Z",
+      "documents": [
+        {
+          "document_id": "doc_001",
+          "version_id": "ver_002",
+          "relative_path": "product-requirements.md",
+          "sha256": "3bde25aa196f34a2b1115bf8c6191d69955672827927520142d3c2cef49f2e9e",
+          "annotations": [
+            {
+              "id": "rev_014",
+              "action": "replace",
+              "status": "open",
+              "user_instruction": "Remove the external dependency; local auth is enough.",
+              "target": {
+                "type": "text_quote",
+                "exact": "The system must use an external identity broker.",
+                "prefix": "Authentication should be straightforward.",
+                "suffix": "",
+                "heading_path": [
+                  "Architecture",
+                  "Authentication"
+                ],
+                "source_line_start": 128,
+                "source_line_end": 134,
+                "confidence": "resolved"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "ExportManifest: missing documents",
+    "type": "ExportManifest",
+    "value": {
+      "schema_version": "1.0.0",
+      "export_id": "exp_001",
+      "project_id": "proj_001",
+      "created_at": "2026-11-06T00:00:00Z"
+    }
+  },
+  {
+    "name": "ExportManifest: missing schema_version",
+    "type": "ExportManifest",
+    "value": {
+      "export_id": "exp_001",
+      "project_id": "proj_001",
+      "created_at": "2026-11-06T00:00:00Z",
+      "documents": [
+        {
+          "document_id": "doc_001",
+          "version_id": "ver_002",
+          "relative_path": "product-requirements.md",
+          "sha256": "3bde25aa196f34a2b1115bf8c6191d69955672827927520142d3c2cef49f2e9e",
+          "annotations": [
+            {
+              "id": "rev_014",
+              "action": "replace",
+              "status": "open",
+              "user_instruction": "Remove the external dependency; local auth is enough.",
+              "target": {
+                "type": "text_quote",
+                "exact": "The system must use an external identity broker.",
+                "prefix": "Authentication should be straightforward.",
+                "suffix": "",
+                "heading_path": [
+                  "Architecture",
+                  "Authentication"
+                ],
+                "source_line_start": 128,
+                "source_line_end": 134,
+                "confidence": "resolved"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

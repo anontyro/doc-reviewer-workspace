@@ -1,0 +1,172 @@
+[
+  {
+    "name": "Project valid",
+    "type": "Project",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "proj_001",
+      "name": "Colony Management Game",
+      "root_path": "/Users/me/colony",
+      "created_at": "2026-11-06T00:00:00Z",
+      "updated_at": "2026-11-06T00:00:00Z"
+    }
+  },
+  {
+    "name": "Document valid",
+    "type": "Document",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "doc_001",
+      "project_id": "proj_001",
+      "relative_path": "product-requirements.md",
+      "format": "markdown",
+      "active_version_id": "ver_002"
+    }
+  },
+  {
+    "name": "DocumentVersion valid",
+    "type": "DocumentVersion",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "ver_002",
+      "document_id": "doc_001",
+      "version_number": 2,
+      "content_hash": "3bde25aa196f34a2b1115bf8c6191d69955672827927520142d3c2cef49f2e9e",
+      "snapshot_path": ".review-workspace/versions/ver_002.md",
+      "created_at": "2026-11-06T00:00:00Z",
+      "origin": "imported"
+    }
+  },
+  {
+    "name": "ReviewRound valid",
+    "type": "ReviewRound",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "rnd_001",
+      "document_version_id": "ver_002",
+      "state": "open",
+      "created_at": "2026-11-06T00:00:00Z"
+    }
+  },
+  {
+    "name": "Annotation valid",
+    "type": "Annotation",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "rev_014",
+      "round_id": "rnd_001",
+      "action_type": "replace",
+      "text": "Remove the external dependency; local auth is enough.",
+      "replacement_text": "Local auth is sufficient.",
+      "anchor": {
+        "exact": "The system must use an external identity broker.",
+        "prefix": "Authentication should be straightforward.",
+        "suffix": "",
+        "heading_path": [
+          "Architecture",
+          "Authentication"
+        ],
+        "source_range": {
+          "start": 120,
+          "end": 168
+        },
+        "source_hash": "3bde25aa196f34a2b1115bf8c6191d69955672827927520142d3c2cef49f2e9e",
+        "confidence": "resolved"
+      },
+      "status": "open",
+      "created_at": "2026-11-06T00:00:00Z",
+      "updated_at": "2026-11-06T00:00:00Z"
+    }
+  },
+  {
+    "name": "ExportSnapshot valid",
+    "type": "ExportSnapshot",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "exp_001",
+      "created_at": "2026-11-06T00:00:00Z",
+      "format": "copy_prompt",
+      "document_version_refs": [
+        "ver_002"
+      ],
+      "annotation_ids": [
+        "rev_014"
+      ],
+      "payload_hash": "3bde25aa196f34a2b1115bf8c6191d69955672827927520142d3c2cef49f2e9e"
+    }
+  },
+  {
+    "name": "LibraryEntry valid",
+    "type": "LibraryEntry",
+    "value": {
+      "schema_version": "1.0.0",
+      "project_id": "proj_001",
+      "last_opened_at": "2026-11-06T00:00:00Z",
+      "local_index_path": "/Users/me/Library/index.sqlite"
+    }
+  },
+  {
+    "name": "ExportManifest valid",
+    "type": "ExportManifest",
+    "value": {
+      "schema_version": "1.0.0",
+      "export_id": "exp_001",
+      "project_id": "proj_001",
+      "created_at": "2026-11-06T00:00:00Z",
+      "documents": [
+        {
+          "document_id": "doc_001",
+          "version_id": "ver_002",
+          "relative_path": "product-requirements.md",
+          "sha256": "3bde25aa196f34a2b1115bf8c6191d69955672827927520142d3c2cef49f2e9e",
+          "annotations": [
+            {
+              "id": "rev_014",
+              "action": "replace",
+              "status": "open",
+              "user_instruction": "Remove the external dependency; local auth is enough.",
+              "target": {
+                "type": "text_quote",
+                "exact": "The system must use an external identity broker.",
+                "prefix": "Authentication should be straightforward.",
+                "suffix": "",
+                "heading_path": [
+                  "Architecture",
+                  "Authentication"
+                ],
+                "source_line_start": 128,
+                "source_line_end": 134,
+                "confidence": "resolved"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "Annotation without optional replacement_text and source_range",
+    "type": "Annotation",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "rev_014",
+      "round_id": "rnd_001",
+      "action_type": "replace",
+      "text": "Remove the external dependency; local auth is enough.",
+      "anchor": {
+        "exact": "The system must use an external identity broker.",
+        "prefix": "Authentication should be straightforward.",
+        "suffix": "",
+        "heading_path": [
+          "Architecture",
+          "Authentication"
+        ],
+        "source_hash": "3bde25aa196f34a2b1115bf8c6191d69955672827927520142d3c2cef49f2e9e",
+        "confidence": "resolved"
+      },
+      "status": "open",
+      "created_at": "2026-11-06T00:00:00Z",
+      "updated_at": "2026-11-06T00:00:00Z"
+    }
+  }
+]
