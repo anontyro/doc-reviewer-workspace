@@ -1,0 +1,589 @@
+{
+  "_doc": "Selection cases shared by every Markdown source-map engine. 'selected' is the rendered text the user selects (soft line breaks read as a space). 'prefix' and 'suffix' are rendered text before and after it inside the same block (at most 40 characters). A 'resolved' case expects the tightest source slice containing the selected characters: markup delimiters are included only when they sit between selected characters, never at the edges. Ranges are half-open [start, end), given both in UTF-8 bytes and UTF-16 code units because the unit is decided by the F1 spike (decision 0005). An 'ambiguous' case expects the engine to flag it, never to pick a match; 'candidates' is how many places the selection and context match. 'heading_path' is null when the matches sit under different headings. Files listed in 'hostile_files' must render with no script, event-handler attribute or javascript: link.",
+  "hostile_files": [
+    "hostile.md"
+  ],
+  "cases": [
+    {
+      "id": "small-plain",
+      "file": "small.md",
+      "selected": "A short paragraph with",
+      "prefix": "",
+      "suffix": " bold text and a link.",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Small Document"
+        ],
+        "source_text": "A short paragraph with",
+        "range_utf8": [
+          18,
+          40
+        ],
+        "range_utf16": [
+          18,
+          40
+        ]
+      }
+    },
+    {
+      "id": "small-inside-bold",
+      "file": "small.md",
+      "selected": "bold text",
+      "prefix": "A short paragraph with ",
+      "suffix": " and a link.",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Small Document"
+        ],
+        "source_text": "bold text",
+        "range_utf8": [
+          43,
+          52
+        ],
+        "range_utf16": [
+          43,
+          52
+        ]
+      }
+    },
+    {
+      "id": "small-across-bold",
+      "file": "small.md",
+      "selected": "with bold text and",
+      "prefix": "A short paragraph ",
+      "suffix": " a link.",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Small Document"
+        ],
+        "source_text": "with **bold text** and",
+        "range_utf8": [
+          36,
+          58
+        ],
+        "range_utf16": [
+          36,
+          58
+        ]
+      }
+    },
+    {
+      "id": "small-second-section",
+      "file": "small.md",
+      "selected": "single",
+      "prefix": "Second section has a ",
+      "suffix": " sentence here.",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Small Document",
+          "Section Two"
+        ],
+        "source_text": "single",
+        "range_utf8": [
+          129,
+          135
+        ],
+        "range_utf16": [
+          129,
+          135
+        ]
+      }
+    },
+    {
+      "id": "repeated-identical-paragraphs",
+      "file": "repeated-text.md",
+      "selected": "The system must be local-first.",
+      "prefix": "",
+      "suffix": "",
+      "expected": {
+        "confidence": "ambiguous",
+        "heading_path": [
+          "Repeated Text"
+        ],
+        "candidates": 2
+      }
+    },
+    {
+      "id": "repeated-phrase-no-context",
+      "file": "repeated-text.md",
+      "selected": "Use the cache",
+      "prefix": "",
+      "suffix": "",
+      "expected": {
+        "confidence": "ambiguous",
+        "heading_path": [
+          "Repeated Text",
+          "Details"
+        ],
+        "candidates": 2
+      }
+    },
+    {
+      "id": "repeated-phrase-by-suffix",
+      "file": "repeated-text.md",
+      "selected": "Use the cache",
+      "prefix": "",
+      "suffix": ". Use the cache when offline.",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Repeated Text",
+          "Details"
+        ],
+        "source_text": "Use the cache",
+        "range_utf8": [
+          95,
+          108
+        ],
+        "range_utf16": [
+          95,
+          108
+        ]
+      }
+    },
+    {
+      "id": "repeated-phrase-by-prefix",
+      "file": "repeated-text.md",
+      "selected": "Use the cache",
+      "prefix": "Use the cache. ",
+      "suffix": " when offline.",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Repeated Text",
+          "Details"
+        ],
+        "source_text": "Use the cache",
+        "range_utf8": [
+          110,
+          123
+        ],
+        "range_utf16": [
+          110,
+          123
+        ]
+      }
+    },
+    {
+      "id": "dup-heading-first-body",
+      "file": "duplicate-headings.md",
+      "selected": "Install the tool.",
+      "prefix": "",
+      "suffix": "",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Guide",
+          "Setup"
+        ],
+        "source_text": "Install the tool.",
+        "range_utf8": [
+          19,
+          36
+        ],
+        "range_utf16": [
+          19,
+          36
+        ]
+      }
+    },
+    {
+      "id": "dup-heading-second-body",
+      "file": "duplicate-headings.md",
+      "selected": "Configure the tool.",
+      "prefix": "",
+      "suffix": "",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Guide",
+          "Setup"
+        ],
+        "source_text": "Configure the tool.",
+        "range_utf8": [
+          73,
+          92
+        ],
+        "range_utf16": [
+          73,
+          92
+        ]
+      }
+    },
+    {
+      "id": "dup-phrase-across-sections",
+      "file": "duplicate-headings.md",
+      "selected": "the tool",
+      "prefix": "",
+      "suffix": ".",
+      "expected": {
+        "confidence": "ambiguous",
+        "heading_path": null,
+        "candidates": 3
+      }
+    },
+    {
+      "id": "nested-item-b",
+      "file": "nested-lists.md",
+      "selected": "Nested item B",
+      "prefix": "",
+      "suffix": "",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Lists"
+        ],
+        "source_text": "Nested item B",
+        "range_utf8": [
+          42,
+          55
+        ],
+        "range_utf16": [
+          42,
+          55
+        ]
+      }
+    },
+    {
+      "id": "nested-deep-ordered",
+      "file": "nested-lists.md",
+      "selected": "Deep ordered two",
+      "prefix": "",
+      "suffix": "",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Lists"
+        ],
+        "source_text": "Deep ordered two",
+        "range_utf8": [
+          87,
+          103
+        ],
+        "range_utf16": [
+          87,
+          103
+        ]
+      }
+    },
+    {
+      "id": "list-top-level",
+      "file": "nested-lists.md",
+      "selected": "Item two",
+      "prefix": "",
+      "suffix": "",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Lists"
+        ],
+        "source_text": "Item two",
+        "range_utf8": [
+          106,
+          114
+        ],
+        "range_utf16": [
+          106,
+          114
+        ]
+      }
+    },
+    {
+      "id": "table-cell-unique",
+      "file": "tables.md",
+      "selected": "pending",
+      "prefix": "",
+      "suffix": "",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Tables"
+        ],
+        "source_text": "pending",
+        "range_utf8": [
+          89,
+          96
+        ],
+        "range_utf16": [
+          89,
+          96
+        ]
+      }
+    },
+    {
+      "id": "table-first-column",
+      "file": "tables.md",
+      "selected": "Alpha",
+      "prefix": "",
+      "suffix": "",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Tables"
+        ],
+        "source_text": "Alpha",
+        "range_utf8": [
+          48,
+          53
+        ],
+        "range_utf16": [
+          48,
+          53
+        ]
+      }
+    },
+    {
+      "id": "table-cell-repeated",
+      "file": "tables.md",
+      "selected": "done",
+      "prefix": "",
+      "suffix": "",
+      "expected": {
+        "confidence": "ambiguous",
+        "heading_path": [
+          "Tables"
+        ],
+        "candidates": 2
+      }
+    },
+    {
+      "id": "code-inside-fence",
+      "file": "code-fences.md",
+      "selected": "echo \"hello\"",
+      "prefix": "",
+      "suffix": "",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Code"
+        ],
+        "source_text": "echo \"hello\"",
+        "range_utf8": [
+          25,
+          37
+        ],
+        "range_utf16": [
+          25,
+          37
+        ]
+      }
+    },
+    {
+      "id": "code-inline",
+      "file": "code-fences.md",
+      "selected": "inline code",
+      "prefix": "Then ",
+      "suffix": " works.",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Code"
+        ],
+        "source_text": "inline code",
+        "range_utf8": [
+          49,
+          60
+        ],
+        "range_utf16": [
+          49,
+          60
+        ]
+      }
+    },
+    {
+      "id": "link-label-repeated",
+      "file": "links.md",
+      "selected": "PRD link",
+      "prefix": "",
+      "suffix": "",
+      "expected": {
+        "confidence": "ambiguous",
+        "heading_path": [
+          "Links"
+        ],
+        "candidates": 2
+      }
+    },
+    {
+      "id": "link-label-by-prefix",
+      "file": "links.md",
+      "selected": "PRD link",
+      "prefix": "other ",
+      "suffix": ".",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Links"
+        ],
+        "source_text": "PRD link",
+        "range_utf8": [
+          68,
+          76
+        ],
+        "range_utf16": [
+          68,
+          76
+        ]
+      }
+    },
+    {
+      "id": "autolink",
+      "file": "links.md",
+      "selected": "https://example.org",
+      "prefix": "Visit ",
+      "suffix": " now.",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Links"
+        ],
+        "source_text": "https://example.org",
+        "range_utf8": [
+          114,
+          133
+        ],
+        "range_utf16": [
+          114,
+          133
+        ]
+      }
+    },
+    {
+      "id": "unicode-accents",
+      "file": "unicode.md",
+      "selected": "résumé naïve",
+      "prefix": "Café ",
+      "suffix": " — “smart quotes”",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Unicode"
+        ],
+        "source_text": "résumé naïve",
+        "range_utf8": [
+          17,
+          32
+        ],
+        "range_utf16": [
+          16,
+          28
+        ]
+      }
+    },
+    {
+      "id": "unicode-astral-emoji",
+      "file": "unicode.md",
+      "selected": "emoji 🎉 end",
+      "prefix": "and ",
+      "suffix": ".",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Unicode"
+        ],
+        "source_text": "emoji 🎉 end",
+        "range_utf8": [
+          60,
+          74
+        ],
+        "range_utf16": [
+          50,
+          62
+        ]
+      }
+    },
+    {
+      "id": "unicode-japanese-and-emoji",
+      "file": "unicode.md",
+      "selected": "テキストと🙂絵文字",
+      "prefix": "日本語の",
+      "suffix": "。",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Unicode"
+        ],
+        "source_text": "テキストと🙂絵文字",
+        "range_utf8": [
+          89,
+          117
+        ],
+        "range_utf16": [
+          69,
+          79
+        ]
+      }
+    },
+    {
+      "id": "crlf-across-soft-break",
+      "file": "crlf.md",
+      "selected": "of text continues on",
+      "prefix": "First line ",
+      "suffix": " a second line.",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "CRLF Doc"
+        ],
+        "source_text": "of text\r\ncontinues on",
+        "range_utf8": [
+          25,
+          46
+        ],
+        "range_utf16": [
+          25,
+          46
+        ]
+      }
+    },
+    {
+      "id": "crlf-later-paragraph",
+      "file": "crlf.md",
+      "selected": "Last paragraph.",
+      "prefix": "",
+      "suffix": "",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "CRLF Doc",
+          "Next"
+        ],
+        "source_text": "Last paragraph.",
+        "range_utf8": [
+          76,
+          91
+        ],
+        "range_utf16": [
+          76,
+          91
+        ]
+      }
+    },
+    {
+      "id": "hostile-safe-text",
+      "file": "hostile.md",
+      "selected": "Safe text remains.",
+      "prefix": "",
+      "suffix": "",
+      "expected": {
+        "confidence": "resolved",
+        "heading_path": [
+          "Hostile"
+        ],
+        "source_text": "Safe text remains.",
+        "range_utf8": [
+          182,
+          200
+        ],
+        "range_utf16": [
+          182,
+          200
+        ]
+      }
+    }
+  ]
+}
