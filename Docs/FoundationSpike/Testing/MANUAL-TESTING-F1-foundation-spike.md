@@ -43,7 +43,7 @@
 ### R1 · Bootstrap (task T-001)
 
 ### 1. Debug build offline
-With the network off, run `pnpm run tauri build -- --debug` once online beforehand if needed, then launch the `.app`.
+With the network off, run `pnpm tauri build --debug` once online beforehand if needed, then launch the `.app`.
 - The window opens and shows the app heading.
 - Nothing prompts for network access.
 

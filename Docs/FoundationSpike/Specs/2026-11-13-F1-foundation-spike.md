@@ -188,7 +188,7 @@ Shared acceptance for every package:
   - `CLAUDE.md` (edit: Layout and commands section only)
 - Acceptance criteria:
   1. `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings` and `cargo test` pass in `src-tauri/`.
-  2. `pnpm run tauri build -- --debug` produces a macOS `.app`, and launching it with the network off shows the window.
+  2. `pnpm tauri build --debug` produces a macOS `.app`, and launching it with the network off shows the window.
   3. `capabilities/default.json` grants no `shell`, `http` or `fs` permission (D4).
   4. `tauri.conf.json` `beforeDevCommand` and `devUrl` match P1's scripts and Vite port.
   5. Decision 0001 records D1–D5 with status Agreed and lists the dependencies added in R1.

@@ -40,7 +40,7 @@ schemas/        JSON Schema (generated)        fixtures/    shared test fixtures
 
 - Web (repo root): `pnpm run check` (typecheck, lint, format:check, test) · `pnpm test` alone for tests
 - Rust (`src-tauri/`): `cargo fmt --check` · `cargo clippy --all-targets -- -D warnings` · `cargo test`
-- App: `pnpm run tauri dev` · `pnpm run tauri build`
+- App: `pnpm tauri dev` · `pnpm tauri build` (`--debug` for a debug bundle)
 
 ## Testing (applies to every task)
 
