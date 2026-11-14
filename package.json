@@ -15,12 +15,22 @@
     "gen:types": "json2ts -i schemas/v1 -o src/domain/generated --additionalProperties=false && prettier --write src/domain/generated"
   },
   "dependencies": {
+    "@tauri-apps/api": "^2.12.4",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "rehype-sanitize": "^6.0.0",
+    "rehype-stringify": "^10.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "unified": "^11.0.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@tauri-apps/cli": "^2.12.4",
+    "@types/hast": "^3.0.5",
+    "@types/jsdom": "^30.0.0",
+    "@types/mdast": "^4.0.4",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
@@ -29,6 +39,7 @@
     "eslint": "^10.14.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.14.0",
+    "jsdom": "^31.0.1",
     "json-schema-to-typescript": "^16.0.0",
     "prettier": "^3.10.1",
     "typescript": "^6.0.3",
