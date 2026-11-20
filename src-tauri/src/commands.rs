@@ -1,11 +1,14 @@
 use crate::document::{
-    open_in_project, open_path, AppState, CommandError, ErrorKind, OpenedDocument, ProjectContext,
-    Scope,
+    open_in_project, open_path, AppState, CommandError, DocStatus, ErrorKind, OpenedDocument,
+    ProjectContext, Scope,
 };
 use crate::domain::entities::Annotation;
 use crate::domain::entities::ProjectId;
+use crate::domain::project::DraftFile;
 use crate::feedback::{build_feedback, FeedbackInput};
 use crate::markdown::{resolve_anchor, ResolvedAnchor};
+use crate::project::backup::Backups;
+use crate::project::drafts::Drafts;
 use crate::project::service::clean_name;
 use crate::project::{LibraryItem, ProjectView, Projects};
 use crate::store::annotations::now_rfc3339;
@@ -40,10 +43,45 @@ pub async fn open_markdown(
 #[tauri::command]
 pub fn save_document(
     state: State<'_, AppState>,
+    backups: State<'_, Backups>,
     text: String,
     expected_hash: String,
 ) -> Result<OpenedDocument, CommandError> {
-    state.save(&text, &expected_hash)
+    state.save(&text, &expected_hash, &backups, &now_rfc3339())
+}
+
+/// Whether the active file still has the bytes that were read (F3 spec D24). Called on window focus and before a save.
+#[tauri::command]
+pub fn check_document(state: State<'_, AppState>) -> Result<DocStatus, CommandError> {
+    state.check()
+}
+
+#[tauri::command]
+pub fn save_draft(
+    state: State<'_, AppState>,
+    drafts: State<'_, Drafts>,
+    text: String,
+    base_hash: String,
+) -> Result<(), CommandError> {
+    state.with_active(|doc, scope| {
+        drafts.save(scope, &doc.document_id, &text, &base_hash, &now_rfc3339())
+    })?
+}
+
+#[tauri::command]
+pub fn read_draft(
+    state: State<'_, AppState>,
+    drafts: State<'_, Drafts>,
+) -> Result<Option<DraftFile>, CommandError> {
+    state.with_active(|doc, scope| drafts.read(scope, &doc.document_id))?
+}
+
+#[tauri::command]
+pub fn clear_draft(
+    state: State<'_, AppState>,
+    drafts: State<'_, Drafts>,
+) -> Result<(), CommandError> {
+    state.with_active(|doc, scope| drafts.clear(scope, &doc.document_id))?
 }
 
 /// Maps a rendered-text selection to the open document's source (F2 spec D5).

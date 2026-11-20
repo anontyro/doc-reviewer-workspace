@@ -45,6 +45,20 @@ fn io(msg: impl std::fmt::Display) -> CommandError {
 }
 
 /// A project name is 1 to 100 characters after trimming, with no control characters (F3 spec D5).
+/// Deletes the temp files a crash left inside `dir` and its sub-folders: `.<name>.tmp-<pid>` (F3 spec D28).
+/// Only called on the project's own `.review-workspace/` folder, never on the user's files.
+fn clean_temp_files(dir: &Path) {
+    for entry in fs::read_dir(dir).into_iter().flatten().flatten() {
+        let path = entry.path();
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if path.is_dir() {
+            clean_temp_files(&path);
+        } else if name.starts_with('.') && name.contains(".tmp-") {
+            let _ = fs::remove_file(&path);
+        }
+    }
+}
+
 pub fn clean_name(name: &str) -> Result<String, CommandError> {
     let name = name.trim();
     if name.is_empty() || name.chars().count() > 100 || name.chars().any(char::is_control) {
@@ -187,6 +201,7 @@ impl Projects {
         let _g = self.locked()?;
         let root = canonical(folder)?;
         let project = read_project(&root)?;
+        clean_temp_files(&root.join(DIR));
         self.remember(&root, &project, now)?;
         Ok(view(&root, &project))
     }
@@ -202,6 +217,7 @@ impl Projects {
                 "the folder now holds a different project",
             ));
         }
+        clean_temp_files(&root.join(DIR));
         self.remember(&root, &project, now)?;
         Ok(view(&root, &project))
     }

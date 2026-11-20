@@ -1,4 +1,5 @@
 use crate::domain::entities::{DocumentId, ProjectId, VersionId};
+use crate::project::backup::{self, Backups};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::{
@@ -56,6 +57,31 @@ pub struct OpenedDocument {
     pub html: String,
 }
 
+/// What `check_document` found on disk (F3 spec D24).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(tag = "status", rename_all = "snake_case")]
+pub enum DocStatus {
+    Unchanged,
+    Changed { disk_hash: String },
+    Missing,
+}
+
+/// Hashes the file of `doc` as it is on disk now and compares it with what was read. Writes nothing.
+fn check_text(doc: &OpenedDocument) -> Result<DocStatus, CommandError> {
+    match fs::read(&doc.path) {
+        Ok(bytes) => {
+            let disk_hash = sha256_hex(&bytes);
+            Ok(if disk_hash == doc.source_hash {
+                DocStatus::Unchanged
+            } else {
+                DocStatus::Changed { disk_hash }
+            })
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(DocStatus::Missing),
+        Err(e) => Err(io(e)),
+    }
+}
+
 /// Where the active document's comments live (F3 spec D6).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Scope {
@@ -106,6 +132,11 @@ impl AppState {
         self.with_active(|doc, _| f(doc))
     }
 
+    /// Compares the active document's file on disk with what was read (F3 spec D24).
+    pub fn check(&self) -> Result<DocStatus, CommandError> {
+        self.with_open(check_text)?
+    }
+
     /// Runs `f` on the open document and its scope, or fails with `no_document`.
     pub fn with_active<T>(
         &self,
@@ -122,12 +153,19 @@ impl AppState {
 
     /// Saves `text` over the active document's file if the file still has `expected_hash`, then makes the saved
     /// file the active document (F3 spec D21). The state stays locked throughout, so two saves cannot interleave.
-    pub fn save(&self, text: &str, expected_hash: &str) -> Result<OpenedDocument, CommandError> {
+    pub fn save(
+        &self,
+        text: &str,
+        expected_hash: &str,
+        backups: &Backups,
+        now: &str,
+    ) -> Result<OpenedDocument, CommandError> {
         let mut guard = self.open.lock().map_err(|_| unavailable())?;
         let active = guard
             .as_mut()
             .ok_or_else(|| CommandError::new(ErrorKind::NoDocument, "no document is open"))?;
-        let saved = save_text(&active.doc, text, expected_hash)?;
+        let dir = backups.dir(&active.scope, &active.doc.document_id);
+        let saved = save_text(&active.doc, text, expected_hash, &dir, now)?;
         active.doc = saved.clone();
         Ok(saved)
     }
@@ -236,6 +274,8 @@ fn save_text(
     doc: &OpenedDocument,
     text: &str,
     expected_hash: &str,
+    backup_dir: &Path,
+    now: &str,
 ) -> Result<OpenedDocument, CommandError> {
     if text.len() as u64 > MAX_BYTES {
         return Err(CommandError::new(
@@ -261,10 +301,13 @@ fn save_text(
         ));
     }
     let permissions = fs::metadata(path).map_err(io)?.permissions();
+    // The old bytes are kept first. If that fails nothing is written (F3 spec D26).
+    backup::write_backup(backup_dir, &on_disk, now)?;
     crate::store::atomic::write_atomic(path, text.as_bytes())
         .map_err(|e| CommandError::new(ErrorKind::Io, format!("could not save: {e}")))?;
-    // shortcut: permissions are restored after the rename, so a failure here leaves the new text with default
-    // permissions. Upgrade when F4 versions need exact modes.
+    backup::prune(backup_dir, backup::KEEP); // only after the save succeeded
+                                             // shortcut: permissions are restored after the rename, so a failure here leaves the new text with default
+                                             // permissions. Upgrade when F4 versions need exact modes.
     let _ = fs::set_permissions(path, permissions);
     read_document(path.to_path_buf(), doc.document_id.clone())
 }

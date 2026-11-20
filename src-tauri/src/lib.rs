@@ -15,6 +15,12 @@ pub fn run() {
         .setup(|app| {
             let dir = app.path().app_data_dir()?.join("annotations");
             app.manage(store::Store::new(dir));
+            app.manage(project::backup::Backups::new(
+                app.path().app_data_dir()?.join("backups"),
+            ));
+            app.manage(project::drafts::Drafts::new(
+                app.path().app_data_dir()?.join("drafts"),
+            ));
             app.manage(project::Projects::new(
                 app.path().app_data_dir()?.join("library.json"),
             ));
@@ -31,6 +37,10 @@ pub fn run() {
             commands::add_document,
             commands::open_project_document,
             commands::save_document,
+            commands::check_document,
+            commands::save_draft,
+            commands::read_draft,
+            commands::clear_draft,
             commands::resolve_selection,
             commands::create_annotation,
             commands::list_annotations,
