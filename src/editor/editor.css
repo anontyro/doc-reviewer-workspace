@@ -1,0 +1,32 @@
+.source-editor .cm-editor {
+  border: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-radius: 6px;
+  min-height: 20rem;
+  background: #fff;
+  color: #111;
+}
+
+.source-editor .cm-editor.cm-focused {
+  outline: 2px solid #3b82f6;
+}
+
+.source-editor .cm-content {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.view-toggle button[aria-pressed="true"] {
+  font-weight: 700;
+}
+
+.banner {
+  border: 1px solid currentColor;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+}

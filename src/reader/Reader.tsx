@@ -17,9 +17,12 @@ import "../review/review.css";
 export default function Reader({
   doc,
   sidebar,
+  commentsLocked,
 }: {
   doc: OpenedDocument;
   sidebar?: HTMLElement | null;
+  /** Why commenting is off right now (unsaved edits), shown beside a disabled Comment button (F3 spec D22). */
+  commentsLocked?: string;
 }) {
   const [locked, setLocked] = useState(false);
   const article = useRef<HTMLElement>(null);
@@ -74,8 +77,16 @@ export default function Reader({
           dangerouslySetInnerHTML={{ __html: doc.html }}
         />
         {!sidebar && comments}
+        {commentsLocked && selected.kind !== "none" && (
+          <div className="floating" role="status">
+            <button type="button" disabled>
+              Comment
+            </button>{" "}
+            {commentsLocked}
+          </div>
+        )}
         <FloatingMenu
-          selected={selected}
+          selected={commentsLocked ? { kind: "none" } : selected}
           onLock={setLocked}
           onClose={restore}
           onSave={(c, text) => void add(c, text)}

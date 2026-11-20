@@ -1,7 +1,7 @@
 import { useRef } from "react";
 
 interface Props {
-  tabs: { path: string; name: string }[];
+  tabs: { path: string; name: string; dirty: boolean }[];
   active: string | null;
   onSelect: (path: string) => void;
   onClose: (path: string) => void;
@@ -43,6 +43,11 @@ export default function Tabs({ tabs, active, onSelect, onClose }: Props) {
             onClick={() => onSelect(t.path)}
           >
             {t.name}
+            {t.dirty && (
+              <span className="dirty" role="img" aria-label="unsaved changes">
+                {" ●"}
+              </span>
+            )}
           </button>
           <button type="button" aria-label={`Close ${t.name}`} onClick={() => onClose(t.path)}>
             ×

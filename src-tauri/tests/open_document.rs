@@ -111,7 +111,12 @@ fn csp_keeps_remote_content_blocked() {
     let csp = json["app"]["security"]["csp"]
         .as_str()
         .expect("a CSP must be set");
-    assert!(csp.starts_with("default-src 'self'"), "{csp}");
+    // CodeMirror adds <style> elements at run time, so style-src allows inline styles (F3 decision 0004).
+    // Scripts, images, fonts, connections and everything else stay on default-src 'self'.
+    assert_eq!(
+        csp, "default-src 'self'; style-src 'self' 'unsafe-inline'",
+        "change this only together with decision 0004"
+    );
     assert!(
         !csp.contains("http") && !csp.contains('*') && !csp.contains("img-src"),
         "{csp}"

@@ -31,6 +31,8 @@ export function fakeBackend(doc: OpenedDocument) {
     /** Comments of the documents that are not active. Rust keeps one active document and its comments. */
     parked: {} as Record<string, AnnotationView[]>,
     active: "",
+    /** When set, `save_document` rejects with it, as for a file that changed on disk. */
+    saveFails: null as { kind: string; message: string } | null,
   };
 
   state.feedback = () => `# Review Instructions\n\n${state.views.length} comment(s)\n`;
@@ -64,8 +66,11 @@ export function fakeBackend(doc: OpenedDocument) {
         state.views = state.parked[a.relativePath] ?? [];
         return state.docs[a.relativePath] ?? doc;
       }
-      case "save_document":
-        return doc;
+      case "save_document": {
+        if (state.saveFails) throw state.saveFails;
+        const saved = state.docs[state.active] ?? doc;
+        return { ...saved, source: a.text, source_hash: "5".repeat(64), html: `<p>${a.text}</p>` };
+      }
       case "resolve_selection":
         return state.resolve;
       case "list_annotations":

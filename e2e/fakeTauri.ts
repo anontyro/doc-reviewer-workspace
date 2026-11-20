@@ -46,19 +46,28 @@ export async function installFakeTauri(
           candidates: n,
         };
       };
+      // The files as "disk" has them. A save changes the text and hash, and __externalEdit changes the hash only.
+      const sources: Record<string, string> = {
+        "plan.md": "# Plan\n\nThe system must be local-first.\n",
+        "notes.md": "# Notes\n",
+      };
+      const hashes: Record<string, string> = {};
+      let saves = 0;
+      const hash = (name: string) => hashes[name] ?? "0".repeat(64);
       const opened = (name: string) => ({
         path: `/tmp/${name}`,
         name,
         document_id: `doc_${name.length.toString(16).padStart(16, "0")}`,
         version_id: "ver_0123456789abcdef",
-        source_hash: "0".repeat(64),
-        source: "",
+        source_hash: hash(name),
+        source: sources[name],
         html: pages[name],
       });
       const w = window as unknown as Record<string, unknown>;
       // Every command the app sends, so a test can check what was and was not called.
       const calls: { cmd: string; args: unknown }[] = [];
       w.__calls = calls;
+      w.__externalEdit = () => (hashes[active] = "e".repeat(64));
       let items = library as FakeProject[];
       const view = (i: FakeProject) => ({
         id: i.project_id,
@@ -95,6 +104,14 @@ export async function installFakeTauri(
           if (cmd === "open_project_document") {
             if (!(args.relativePath in pages)) throw { kind: "invalid", message: "not a document" };
             active = args.relativePath;
+            return opened(active);
+          }
+          if (cmd === "save_document") {
+            if (args.expectedHash !== hash(active))
+              throw { kind: "conflict", message: "the file changed on disk since it was opened" };
+            sources[active] = args.text;
+            hashes[active] = String(++saves).padStart(64, "0");
+            pages[active] = `<p>${args.text.replace(/</g, "&lt;")}</p>`;
             return opened(active);
           }
           if (cmd === "resolve_selection") return resolve(args as never);
