@@ -1,17 +1,5 @@
 [
   {
-    "name": "Project valid",
-    "type": "Project",
-    "value": {
-      "schema_version": "1.0.0",
-      "id": "proj_001",
-      "name": "Colony Management Game",
-      "root_path": "/Users/me/colony",
-      "created_at": "2026-11-06T00:00:00Z",
-      "updated_at": "2026-11-06T00:00:00Z"
-    }
-  },
-  {
     "name": "Document valid",
     "type": "Document",
     "value": {
@@ -93,16 +81,6 @@
         "rev_014"
       ],
       "payload_hash": "3bde25aa196f34a2b1115bf8c6191d69955672827927520142d3c2cef49f2e9e"
-    }
-  },
-  {
-    "name": "LibraryEntry valid",
-    "type": "LibraryEntry",
-    "value": {
-      "schema_version": "1.0.0",
-      "project_id": "proj_001",
-      "last_opened_at": "2026-11-06T00:00:00Z",
-      "local_index_path": "/Users/me/Library/index.sqlite"
     }
   },
   {
@@ -216,6 +194,70 @@
       "path": "/Users/me/notes/plan.md",
       "next_sequence": 1,
       "annotations": []
+    }
+  },
+  {
+    "name": "ProjectFile valid",
+    "type": "ProjectFile",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "proj_0123456789abcdef",
+      "name": "Colony Management",
+      "created_at": "2026-11-20T10:00:00Z",
+      "updated_at": "2026-11-20T10:00:00Z",
+      "documents": [
+        {
+          "relative_path": "product-requirements.md",
+          "format": "markdown",
+          "added_at": "2026-11-20T10:00:00Z"
+        }
+      ]
+    }
+  },
+  {
+    "name": "ProjectFile valid and empty",
+    "type": "ProjectFile",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "proj_0123456789abcdef",
+      "name": "Colony Management",
+      "created_at": "2026-11-20T10:00:00Z",
+      "updated_at": "2026-11-20T10:00:00Z",
+      "documents": []
+    }
+  },
+  {
+    "name": "LibraryFile valid",
+    "type": "LibraryFile",
+    "value": {
+      "schema_version": "1.0.0",
+      "entries": [
+        {
+          "project_id": "proj_0123456789abcdef",
+          "name": "Colony Management",
+          "root_path": "/Users/me/colony",
+          "last_opened_at": "2026-11-20T10:00:00Z"
+        }
+      ]
+    }
+  },
+  {
+    "name": "LibraryFile valid and empty",
+    "type": "LibraryFile",
+    "value": {
+      "schema_version": "1.0.0",
+      "entries": []
+    }
+  },
+  {
+    "name": "DraftFile valid",
+    "type": "DraftFile",
+    "value": {
+      "schema_version": "1.0.0",
+      "document_id": "doc_0123456789abcdef",
+      "base_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "text": "# Draft\r\nunsaved ✍\n",
+      "saved_at": "2026-11-20T10:00:00Z"
     }
   }
 ]

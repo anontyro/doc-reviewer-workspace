@@ -3,14 +3,15 @@ import domainSchema from "../../schemas/v1/domain.schema.json";
 import manifestSchema from "../../schemas/v1/export-manifest.schema.json";
 
 export const ENTITY_NAMES = [
-  "Project",
   "Document",
   "DocumentVersion",
   "ReviewRound",
   "Annotation",
   "ExportSnapshot",
-  "LibraryEntry",
   "AnnotationFile",
+  "ProjectFile",
+  "LibraryFile",
+  "DraftFile",
 ] as const;
 export type EntityName = (typeof ENTITY_NAMES)[number] | "ExportManifest";
 

@@ -1,39 +1,5 @@
 [
   {
-    "name": "Project: missing schema_version",
-    "type": "Project",
-    "value": {
-      "id": "proj_001",
-      "name": "Colony Management Game",
-      "root_path": "/Users/me/colony",
-      "created_at": "2026-11-06T00:00:00Z",
-      "updated_at": "2026-11-06T00:00:00Z"
-    }
-  },
-  {
-    "name": "Project: id with wrong prefix",
-    "type": "Project",
-    "value": {
-      "schema_version": "1.0.0",
-      "id": "project_001",
-      "name": "Colony Management Game",
-      "root_path": "/Users/me/colony",
-      "created_at": "2026-11-06T00:00:00Z",
-      "updated_at": "2026-11-06T00:00:00Z"
-    }
-  },
-  {
-    "name": "Project: missing name",
-    "type": "Project",
-    "value": {
-      "schema_version": "1.0.0",
-      "id": "proj_001",
-      "root_path": "/Users/me/colony",
-      "created_at": "2026-11-06T00:00:00Z",
-      "updated_at": "2026-11-06T00:00:00Z"
-    }
-  },
-  {
     "name": "Document: unsupported format",
     "type": "Document",
     "value": {
@@ -80,16 +46,6 @@
       "id": "rnd_001",
       "state": "open",
       "created_at": "2026-11-06T00:00:00Z"
-    }
-  },
-  {
-    "name": "LibraryEntry: project_id with wrong prefix",
-    "type": "LibraryEntry",
-    "value": {
-      "schema_version": "1.0.0",
-      "project_id": "doc_001",
-      "last_opened_at": "2026-11-06T00:00:00Z",
-      "local_index_path": "/Users/me/Library/index.sqlite"
     }
   },
   {
@@ -529,6 +485,133 @@
       "path": "/Users/me/notes/plan.md",
       "next_sequence": 3,
       "annotations": {}
+    }
+  },
+  {
+    "name": "ProjectFile: missing schema_version",
+    "type": "ProjectFile",
+    "value": {
+      "id": "proj_0123456789abcdef",
+      "name": "Colony Management",
+      "created_at": "2026-11-20T10:00:00Z",
+      "updated_at": "2026-11-20T10:00:00Z",
+      "documents": [
+        {
+          "relative_path": "product-requirements.md",
+          "format": "markdown",
+          "added_at": "2026-11-20T10:00:00Z"
+        }
+      ]
+    }
+  },
+  {
+    "name": "ProjectFile: id with wrong prefix",
+    "type": "ProjectFile",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "project_001",
+      "name": "Colony Management",
+      "created_at": "2026-11-20T10:00:00Z",
+      "updated_at": "2026-11-20T10:00:00Z",
+      "documents": [
+        {
+          "relative_path": "product-requirements.md",
+          "format": "markdown",
+          "added_at": "2026-11-20T10:00:00Z"
+        }
+      ]
+    }
+  },
+  {
+    "name": "ProjectFile: absolute root_path is not allowed",
+    "type": "ProjectFile",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "proj_0123456789abcdef",
+      "name": "Colony Management",
+      "created_at": "2026-11-20T10:00:00Z",
+      "updated_at": "2026-11-20T10:00:00Z",
+      "documents": [
+        {
+          "relative_path": "product-requirements.md",
+          "format": "markdown",
+          "added_at": "2026-11-20T10:00:00Z"
+        }
+      ],
+      "root_path": "/Users/me/colony"
+    }
+  },
+  {
+    "name": "ProjectFile: document with unknown format",
+    "type": "ProjectFile",
+    "value": {
+      "schema_version": "1.0.0",
+      "id": "proj_0123456789abcdef",
+      "name": "Colony Management",
+      "created_at": "2026-11-20T10:00:00Z",
+      "updated_at": "2026-11-20T10:00:00Z",
+      "documents": [
+        {
+          "relative_path": "a.md",
+          "format": "docx",
+          "added_at": "2026-11-20T10:00:00Z"
+        }
+      ]
+    }
+  },
+  {
+    "name": "LibraryFile: entry project_id with wrong prefix",
+    "type": "LibraryFile",
+    "value": {
+      "schema_version": "1.0.0",
+      "entries": [
+        {
+          "project_id": "p_1",
+          "name": "Colony Management",
+          "root_path": "/Users/me/colony",
+          "last_opened_at": "2026-11-20T10:00:00Z"
+        }
+      ]
+    }
+  },
+  {
+    "name": "LibraryFile: entries missing",
+    "type": "LibraryFile",
+    "value": {
+      "schema_version": "1.0.0"
+    }
+  },
+  {
+    "name": "DraftFile: document_id with wrong prefix",
+    "type": "DraftFile",
+    "value": {
+      "schema_version": "1.0.0",
+      "document_id": "proj_001",
+      "base_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "text": "# Draft\r\nunsaved ✍\n",
+      "saved_at": "2026-11-20T10:00:00Z"
+    }
+  },
+  {
+    "name": "DraftFile: missing base_hash",
+    "type": "DraftFile",
+    "value": {
+      "schema_version": "1.0.0",
+      "document_id": "doc_0123456789abcdef",
+      "text": "# Draft\r\nunsaved ✍\n",
+      "saved_at": "2026-11-20T10:00:00Z"
+    }
+  },
+  {
+    "name": "DraftFile: extra field",
+    "type": "DraftFile",
+    "value": {
+      "schema_version": "1.0.0",
+      "document_id": "doc_0123456789abcdef",
+      "base_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "text": "# Draft\r\nunsaved ✍\n",
+      "saved_at": "2026-11-20T10:00:00Z",
+      "note": "x"
     }
   }
 ]

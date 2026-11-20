@@ -16,27 +16,31 @@
     "document_version": {
       "$ref": "#/$defs/DocumentVersion"
     },
+    "draft_file": {
+      "$ref": "#/$defs/DraftFile"
+    },
     "export_snapshot": {
       "$ref": "#/$defs/ExportSnapshot"
     },
-    "library_entry": {
-      "$ref": "#/$defs/LibraryEntry"
+    "library_file": {
+      "$ref": "#/$defs/LibraryFile"
     },
-    "project": {
-      "$ref": "#/$defs/Project"
+    "project_file": {
+      "$ref": "#/$defs/ProjectFile"
     },
     "review_round": {
       "$ref": "#/$defs/ReviewRound"
     }
   },
   "required": [
-    "project",
+    "project_file",
     "document",
     "document_version",
     "review_round",
     "annotation",
     "export_snapshot",
-    "library_entry",
+    "library_file",
+    "draft_file",
     "annotation_file"
   ],
   "$defs": {
@@ -290,6 +294,35 @@
         "origin"
       ]
     },
+    "DraftFile": {
+      "description": "Unsaved editor text, written so a crash does not lose it. `base_hash` is the hash of the file the text was\nedited from, so restoring it can still detect a file that changed since.",
+      "type": "object",
+      "properties": {
+        "base_hash": {
+          "type": "string"
+        },
+        "document_id": {
+          "$ref": "#/$defs/DocumentId"
+        },
+        "saved_at": {
+          "type": "string"
+        },
+        "schema_version": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "document_id",
+        "base_hash",
+        "text",
+        "saved_at"
+      ]
+    },
     "ExportId": {
       "type": "string",
       "pattern": "^exp_.+$"
@@ -342,42 +375,90 @@
         "payload_hash"
       ]
     },
-    "LibraryEntry": {
+    "LibraryFile": {
+      "description": "`<app data>/library.json`. Rebuildable by opening the folders again.",
       "type": "object",
       "properties": {
-        "last_opened_at": {
-          "type": "string"
-        },
-        "local_index_path": {
-          "type": "string"
-        },
-        "project_id": {
-          "$ref": "#/$defs/ProjectId"
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/LibraryRecord"
+          }
         },
         "schema_version": {
           "type": "string"
         }
       },
+      "additionalProperties": false,
       "required": [
         "schema_version",
-        "project_id",
-        "last_opened_at",
-        "local_index_path"
+        "entries"
       ]
     },
-    "Project": {
+    "LibraryRecord": {
+      "description": "One remembered project. A cache of what the user opened: `project.json` wins if the name differs.",
+      "type": "object",
+      "properties": {
+        "last_opened_at": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "project_id": {
+          "$ref": "#/$defs/ProjectId"
+        },
+        "root_path": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "project_id",
+        "name",
+        "root_path",
+        "last_opened_at"
+      ]
+    },
+    "ProjectDocument": {
+      "description": "A document the user added to a project. Only added documents are tracked, the folder is never scanned.",
+      "type": "object",
+      "properties": {
+        "added_at": {
+          "type": "string"
+        },
+        "format": {
+          "$ref": "#/$defs/DocumentFormat"
+        },
+        "relative_path": {
+          "description": "A single file name in the project root (F3 spec D9). Never an absolute path.",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "required": [
+        "relative_path",
+        "format",
+        "added_at"
+      ]
+    },
+    "ProjectFile": {
+      "description": "`<project>/.review-workspace/project.json`. Holds no absolute path, so the folder can be moved or synced.",
       "type": "object",
       "properties": {
         "created_at": {
           "type": "string"
         },
+        "documents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ProjectDocument"
+          }
+        },
         "id": {
           "$ref": "#/$defs/ProjectId"
         },
         "name": {
-          "type": "string"
-        },
-        "root_path": {
           "type": "string"
         },
         "schema_version": {
@@ -387,13 +468,14 @@
           "type": "string"
         }
       },
+      "additionalProperties": false,
       "required": [
         "schema_version",
         "id",
         "name",
-        "root_path",
         "created_at",
-        "updated_at"
+        "updated_at",
+        "documents"
       ]
     },
     "ProjectId": {

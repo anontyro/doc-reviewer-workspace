@@ -34,9 +34,10 @@ export interface DomainSchemas {
   annotation_file: AnnotationFile;
   document: Document;
   document_version: DocumentVersion;
+  draft_file: DraftFile;
   export_snapshot: ExportSnapshot;
-  library_entry: LibraryEntry;
-  project: Project;
+  library_file: LibraryFile;
+  project_file: ProjectFile;
   review_round: ReviewRound;
 }
 export interface Annotation {
@@ -116,6 +117,17 @@ export interface DocumentVersion {
   snapshot_path: string;
   version_number: number;
 }
+/**
+ * Unsaved editor text, written so a crash does not lose it. `base_hash` is the hash of the file the text was
+ * edited from, so restoring it can still detect a file that changed since.
+ */
+export interface DraftFile {
+  base_hash: string;
+  document_id: DocumentId;
+  saved_at: string;
+  schema_version: string;
+  text: string;
+}
 export interface ExportSnapshot {
   annotation_ids: AnnotationId[];
   created_at: string;
@@ -129,19 +141,43 @@ export interface ExportSnapshot {
   relative_output_path?: string | null;
   schema_version: string;
 }
-export interface LibraryEntry {
-  last_opened_at: string;
-  local_index_path: string;
-  project_id: ProjectId;
+/**
+ * `<app data>/library.json`. Rebuildable by opening the folders again.
+ */
+export interface LibraryFile {
+  entries: LibraryRecord[];
   schema_version: string;
 }
-export interface Project {
+/**
+ * One remembered project. A cache of what the user opened: `project.json` wins if the name differs.
+ */
+export interface LibraryRecord {
+  last_opened_at: string;
+  name: string;
+  project_id: ProjectId;
+  root_path: string;
+}
+/**
+ * `<project>/.review-workspace/project.json`. Holds no absolute path, so the folder can be moved or synced.
+ */
+export interface ProjectFile {
   created_at: string;
+  documents: ProjectDocument[];
   id: ProjectId;
   name: string;
-  root_path: string;
   schema_version: string;
   updated_at: string;
+}
+/**
+ * A document the user added to a project. Only added documents are tracked, the folder is never scanned.
+ */
+export interface ProjectDocument {
+  added_at: string;
+  format: DocumentFormat;
+  /**
+   * A single file name in the project root (F3 spec D9). Never an absolute path.
+   */
+  relative_path: string;
 }
 export interface ReviewRound {
   completed_at?: string | null;

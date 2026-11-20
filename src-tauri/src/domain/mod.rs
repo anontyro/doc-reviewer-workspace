@@ -3,12 +3,12 @@
 pub mod anchor;
 pub mod entities;
 pub mod export;
+pub mod project;
 pub mod schema_version;
 pub mod store;
 
-use entities::{
-    Annotation, Document, DocumentVersion, ExportSnapshot, LibraryEntry, Project, ReviewRound,
-};
+use entities::{Annotation, Document, DocumentVersion, ExportSnapshot, ReviewRound};
+use project::{DraftFile, LibraryFile, ProjectFile};
 use schemars::{schema_for, JsonSchema};
 use store::AnnotationFile;
 
@@ -16,13 +16,14 @@ use store::AnnotationFile;
 #[derive(JsonSchema)]
 #[allow(dead_code)]
 struct DomainSchemas {
-    project: Project,
+    project_file: ProjectFile,
     document: Document,
     document_version: DocumentVersion,
     review_round: ReviewRound,
     annotation: Annotation,
     export_snapshot: ExportSnapshot,
-    library_entry: LibraryEntry,
+    library_file: LibraryFile,
+    draft_file: DraftFile,
     annotation_file: AnnotationFile,
 }
 

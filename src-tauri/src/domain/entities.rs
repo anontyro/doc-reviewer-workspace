@@ -69,16 +69,6 @@ pub enum AnnotationStatus {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-pub struct Project {
-    pub schema_version: String,
-    pub id: ProjectId,
-    pub name: String,
-    pub root_path: String,
-    pub created_at: String,
-    pub updated_at: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct Document {
     pub schema_version: String,
     pub id: DocumentId,
@@ -142,14 +132,6 @@ pub struct ExportSnapshot {
     pub payload_hash: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub relative_output_path: Option<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-pub struct LibraryEntry {
-    pub schema_version: String,
-    pub project_id: ProjectId,
-    pub last_opened_at: String,
-    pub local_index_path: String,
 }
 
 #[cfg(test)]
