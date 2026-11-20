@@ -42,9 +42,3 @@ does it, read the code.
 | # | Decision | Written by |
 |---|---|---|
 | [0004](0004-feedback-prompt-format.md) | The feedback prompt is a pure, deterministic function, and quotes and comments sit in length-safe fences so they stay verbatim. | P7 |
-
-## Open questions
-
-Not decided yet. Each one becomes a numbered file once it is.
-
-- **Is the CSS Custom Highlight API available in the target WKWebView?** Decides whether R2's highlight needs a fallback (Q1).

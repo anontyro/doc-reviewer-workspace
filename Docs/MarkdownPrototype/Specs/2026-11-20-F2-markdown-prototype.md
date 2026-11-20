@@ -12,7 +12,7 @@ Work item: F2 (PRD milestone M1). Releases map to these tasks:
 
 Branch: `feature/F2-markdown-prototype`.
 Design: mockups cited by path, not copied: `Docs/02_markdown_review.png`, `Docs/03_inline_annotation.png`, `Docs/04_export_preview.png`.
-Status: **draft 2026-11-20**. Q1 is open and blocks only R2's highlight (D12).
+Status: **approved 2026-11-20**.
 Manual testing: `Docs/MarkdownPrototype/Testing/MANUAL-TESTING-F2-markdown-prototype.md`.
 Decisions: `Docs/MarkdownPrototype/Decisions/` (README lists every planned record and the package that writes it).
 
@@ -393,7 +393,5 @@ Shared acceptance for every package:
 - **Interaction → D10.** Comment only in the UI, all six values in the model.
 - **File access → D1.** A Rust command shows the dialog. The web side gets no `dialog` or `fs` permission.
 
-## Open questions
-
-- **Q1 · Highlight API support.** D13 uses the CSS Custom Highlight API, which needs a recent WKWebView (macOS 14 or
-  later, by my reading, not checked). Default: assume it works and fall back to no highlight. Blocks R2's highlight only.
+- **Q1 → D13.** Assume the CSS Custom Highlight API exists in the target WKWebView. If not, there is no highlight and the
+  panel still shows the quote. Manual case 8 records the macOS version.
