@@ -45,6 +45,13 @@ describe("domain schema validation", () => {
     expect(result.ok === false && result.errors).toContain("exact");
   });
 
+  it("accepts the file Rust writes for comments and refuses a corrupted one", () => {
+    const file = valid.find((c) => c.name === "AnnotationFile valid")!;
+    expect(validateEntity("AnnotationFile", file.value)).toEqual({ ok: true });
+    const broken = { ...(file.value as object), next_sequence: "3" };
+    expect(validateEntity("AnnotationFile", broken).ok).toBe(false);
+  });
+
   it("gives the generated TS types the same shape the validator accepts", () => {
     const annotation = valid.find((c) => c.type === "Annotation")!.value as Annotation;
     expect(annotation.anchor.confidence).toBe("resolved");

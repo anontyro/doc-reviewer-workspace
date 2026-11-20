@@ -1,0 +1,180 @@
+[
+  {
+    "id": "single-resolved",
+    "name": "plan.md",
+    "version_id": "ver_1111111111111111",
+    "source_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "source": "# Plan\n\n## Goals\n\nShip the prototype by Friday.\n\nKeep it small.\n",
+    "annotations": [
+      {
+        "id": "rev_0001",
+        "status": "open",
+        "text": "Make this less aggressive; say \"next week\".",
+        "exact": "Ship the prototype by Friday.",
+        "prefix": "",
+        "suffix": "",
+        "heading_path": [
+          "Plan",
+          "Goals"
+        ],
+        "source_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+      }
+    ]
+  },
+  {
+    "id": "ordering-and-excluded",
+    "name": "notes.md",
+    "version_id": "ver_1111111111111111",
+    "source_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "source": "# Notes\n\nFirst paragraph here.\n\nSecond paragraph here.\n\nThird paragraph here.\n",
+    "annotations": [
+      {
+        "id": "rev_0001",
+        "status": "open",
+        "text": "third",
+        "exact": "Third paragraph here.",
+        "prefix": "",
+        "suffix": "",
+        "heading_path": [
+          "Notes"
+        ],
+        "source_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      {
+        "id": "rev_0002",
+        "status": "resolved",
+        "text": "done already",
+        "exact": "Second paragraph",
+        "prefix": "",
+        "suffix": "",
+        "heading_path": [
+          "Notes"
+        ],
+        "source_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      {
+        "id": "rev_0003",
+        "status": "open",
+        "text": "first",
+        "exact": "First paragraph here.",
+        "prefix": "",
+        "suffix": "",
+        "heading_path": [
+          "Notes"
+        ],
+        "source_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      {
+        "id": "rev_0004",
+        "status": "superseded",
+        "text": "old idea",
+        "exact": "here.",
+        "prefix": "Third paragraph ",
+        "suffix": "",
+        "heading_path": [
+          "Notes"
+        ],
+        "source_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      {
+        "id": "rev_0005",
+        "status": "open",
+        "text": "second",
+        "exact": "Second paragraph here.",
+        "prefix": "",
+        "suffix": "",
+        "heading_path": [
+          "Notes"
+        ],
+        "source_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+      }
+    ]
+  },
+  {
+    "id": "ambiguous-orphaned-stale",
+    "name": "doc.md",
+    "version_id": "ver_1111111111111111",
+    "source_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "source": "# Doc\n\nRepeat me. Repeat me.\n\nOnly once here.\n\nUnchanged text.\n",
+    "annotations": [
+      {
+        "id": "rev_0001",
+        "status": "open",
+        "text": "which one?",
+        "exact": "Repeat me.",
+        "prefix": "",
+        "suffix": "",
+        "heading_path": [
+          "Doc"
+        ],
+        "source_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      {
+        "id": "rev_0002",
+        "status": "open",
+        "text": "gone",
+        "exact": "Text that was deleted.",
+        "prefix": "",
+        "suffix": "",
+        "heading_path": [
+          "Doc"
+        ],
+        "source_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      {
+        "id": "rev_0003",
+        "status": "open",
+        "text": "check this",
+        "exact": "Only once here.",
+        "prefix": "",
+        "suffix": "",
+        "heading_path": [
+          "Doc"
+        ],
+        "source_hash": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    ]
+  },
+  {
+    "id": "backticks-and-unicode",
+    "name": "ticks.md",
+    "version_id": "ver_1111111111111111",
+    "source_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "source": "# Ticks\n\nPlain é😀 sentence.\n",
+    "annotations": [
+      {
+        "id": "rev_0001",
+        "status": "open",
+        "text": "  Replace with:\n```rust\nfn x() {}\n````\ndone  ",
+        "exact": "é😀 sentence.",
+        "prefix": "Plain ",
+        "suffix": "",
+        "heading_path": [
+          "Ticks"
+        ],
+        "source_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+      }
+    ]
+  },
+  {
+    "id": "no-annotations",
+    "name": "empty.md",
+    "version_id": "ver_1111111111111111",
+    "source_hash": "1111111111111111111111111111111111111111111111111111111111111111",
+    "source": "# Empty\n\nNothing to say.\n",
+    "annotations": [
+      {
+        "id": "rev_0001",
+        "status": "superseded",
+        "text": "dropped",
+        "exact": "Nothing to say.",
+        "prefix": "",
+        "suffix": "",
+        "heading_path": [
+          "Empty"
+        ],
+        "source_hash": "1111111111111111111111111111111111111111111111111111111111111111"
+      }
+    ]
+  }
+]

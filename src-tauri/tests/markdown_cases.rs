@@ -1,6 +1,6 @@
-//! Runs every case in fixtures/markdown/cases.json through engine B and checks the pass rule (spec D15).
+//! Runs every case in fixtures/markdown/cases.json through the Rust engine and checks the pass rule (F1 spec D15).
 use llm_review_workspace_lib::domain::anchor::AnchorConfidence;
-use llm_review_workspace_lib::spike::{render_markdown, resolve_anchor};
+use llm_review_workspace_lib::markdown::{render_markdown, resolve_anchor};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::{fs, path::PathBuf};

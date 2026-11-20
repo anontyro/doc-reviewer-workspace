@@ -5,10 +5,10 @@ export interface Capture {
   suffix: string;
 }
 
-const CONTEXT = 40;
+export const CONTEXT = 40;
 // Soft line breaks read as a space (cases.json).
 const flat = (s: string) => s.replace(/\r?\n/g, " ");
-const BLOCK = "li,p,h1,h2,h3,h4,h5,h6,td,th,pre";
+export const BLOCK = "li,p,h1,h2,h3,h4,h5,h6,td,th,pre";
 
 /** Turns a DOM selection range into the engine input. Returns null for a collapsed range or one that crosses blocks. */
 export function captureSelection(range: Range): Capture | null {

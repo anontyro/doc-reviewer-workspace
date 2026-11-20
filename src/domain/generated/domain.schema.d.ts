@@ -20,9 +20,9 @@ export type RoundId = string;
  * Recommended values (PRD §6.2). Export inclusion is not a status.
  */
 export type AnnotationStatus = "open" | "resolved" | "superseded";
+export type DocumentId = string;
 export type VersionId = string;
 export type DocumentFormat = "markdown" | "pdf";
-export type DocumentId = string;
 export type ProjectId = string;
 export type ExportId = string;
 
@@ -31,6 +31,7 @@ export type ExportId = string;
  */
 export interface DomainSchemas {
   annotation: Annotation;
+  annotation_file: AnnotationFile;
   document: Document;
   document_version: DocumentVersion;
   export_snapshot: ExportSnapshot;
@@ -74,6 +75,22 @@ export interface Anchor {
 export interface SourceRange {
   end: number;
   start: number;
+}
+/**
+ * The one file that holds every comment on a document (F2 spec D15). F3 may replace it with project storage.
+ */
+export interface AnnotationFile {
+  annotations: Annotation[];
+  document_id: DocumentId;
+  /**
+   * Next `rev_NNNN` sequence number. It only grows, so a deleted id is never reused (F2 spec D17).
+   */
+  next_sequence: number;
+  /**
+   * Path the document had when last saved. Informational only: identity is `document_id`.
+   */
+  path: string;
+  schema_version: string;
 }
 export interface Document {
   active_version_id: VersionId;

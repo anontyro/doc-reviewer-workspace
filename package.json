@@ -8,8 +8,9 @@
     "build": "tsc && vite build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "format:check": "prettier --check src \"*.ts\" \"*.js\" \"*.html\" \"*.json\" .prettierrc",
+    "format:check": "prettier --check src e2e \"*.ts\" \"*.js\" \"*.html\" \"*.json\" .prettierrc",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "check": "pnpm run typecheck && pnpm run lint && pnpm run format:check && pnpm run test",
     "tauri": "tauri",
     "gen:types": "json2ts -i schemas/v1 -o src/domain/generated --additionalProperties=false && prettier --write src/domain/generated"
@@ -17,20 +18,13 @@
   "dependencies": {
     "@tauri-apps/api": "^2.12.4",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "rehype-sanitize": "^6.0.0",
-    "rehype-stringify": "^10.0.1",
-    "remark-gfm": "^4.0.1",
-    "remark-parse": "^11.0.0",
-    "remark-rehype": "^11.1.2",
-    "unified": "^11.0.5"
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.1",
     "@tauri-apps/cli": "^2.12.4",
-    "@types/hast": "^3.0.5",
     "@types/jsdom": "^30.0.0",
-    "@types/mdast": "^4.0.4",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
