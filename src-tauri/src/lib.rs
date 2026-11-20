@@ -1,14 +1,16 @@
+pub mod commands;
+pub mod document;
 pub mod domain;
-pub mod spike;
+pub mod markdown;
 
 pub fn run() {
-    let builder = tauri::Builder::default();
-    #[cfg(debug_assertions)]
-    let builder = builder.invoke_handler(tauri::generate_handler![
-        spike::spike_render_markdown,
-        spike::spike_resolve_anchor
-    ]);
-    builder
+    tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .manage(document::AppState::default())
+        .invoke_handler(tauri::generate_handler![
+            commands::open_markdown,
+            commands::resolve_selection
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
