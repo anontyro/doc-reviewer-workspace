@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { openMarkdown, type AnnotationView, type OpenedDocument } from "../api";
+import ExportPanel from "../review/ExportPanel";
 import FloatingMenu from "../review/FloatingMenu";
 import CommentPanel from "../review/CommentPanel";
 import { findRange, paintHighlights } from "../review/highlight";
@@ -82,6 +83,7 @@ export default function Reader() {
           />
         </div>
       )}
+      {doc && <ExportPanel refreshKey={views} />}
     </section>
   );
 }

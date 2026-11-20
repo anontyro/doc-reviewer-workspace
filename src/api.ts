@@ -71,3 +71,6 @@ export const listAnnotations = () => call<AnnotationView[]>("list_annotations");
 export const updateAnnotation = (id: string, text: string) =>
   call<Annotation>("update_annotation", { id, text });
 export const deleteAnnotation = (id: string) => call<null>("delete_annotation", { id });
+
+/** The exact feedback prompt for the open document: what the export panel shows and copies (F2 spec D25). */
+export const generateFeedback = () => call<string>("generate_feedback");

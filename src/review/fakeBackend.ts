@@ -11,10 +11,14 @@ export function fakeBackend(doc: OpenedDocument) {
       candidates: 1,
     } as ResolvedAnchor,
     calls: [] as { cmd: string; args: Record<string, unknown> }[],
+    /** What `generate_feedback` answers. A function lets a test make it depend on the comments. */
+    feedback: (() => "") as () => string,
     /** Commands that reject with this error instead of answering. */
     failWith: null as { kind: string; message: string } | null,
     next: 1,
   };
+
+  state.feedback = () => `# Review Instructions\n\n${state.views.length} comment(s)\n`;
 
   const handler = (cmd: string, args?: unknown) => {
     const a = (args ?? {}) as Record<string, string>;
@@ -27,6 +31,8 @@ export function fakeBackend(doc: OpenedDocument) {
         return state.resolve;
       case "list_annotations":
         return state.views;
+      case "generate_feedback":
+        return state.feedback();
       case "create_annotation": {
         const annotation = {
           schema_version: "1.0.0",
