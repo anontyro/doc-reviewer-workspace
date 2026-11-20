@@ -39,17 +39,18 @@ Each TS difference above caused a failing case during the build and was fixed in
 
 ## WKWebView manual results
 
-Not run yet. The manual testing document (`Docs/FoundationSpike/Testing/MANUAL-TESTING-F1-foundation-spike.md`) must
-be run by a person in `pnpm tauri dev`, with the network off. Until then the results below are blank.
+Run by the project owner on 2026-11-20 in `pnpm tauri dev`. They reported the manual testing document as passing and
+the app as fine. No per-case notes or timings were recorded, so differences between the engines in WKWebView, if any,
+are not documented.
 
 | # | Area | Pass / Fail | Notes |
 |---|---|---|---|
-| 1-8 | see the testing document | not run | |
+| 1-8 | see the testing document | Pass (reported) | no per-case notes |
 
 ## Unresolved unknowns
 
-- **Real selection in WKWebView.** Neither engine has been tried on a real browser selection. Engine B was only tested
-  with text and context, so its path through `captureSelection` and `invoke` is unproven.
+- **Real selection in WKWebView.** Reported as passing, without per-case notes. Edge cases (cross-block, entities) were not
+  recorded one by one.
 - **Entities and escapes.** When rendered text differs from the source (`&amp;`, `\*`), both engines map every character
   to the whole node, so a range is the node, not the exact characters. No fixture covers it.
 - **Fixtures were written by the same author as the engines.** 28 / 28 is a good sign, not proof against real LLM

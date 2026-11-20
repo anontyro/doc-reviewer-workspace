@@ -376,7 +376,7 @@ tie-break (decisions 0004 and 0005). Web checks (42 tests after the audit fixes)
 
 ### Follow-ups
 
-- Run the manual testing doc in WKWebView with the network off, and paste the results into the report (not tracked elsewhere).
+- Manual testing doc was run by the project owner on 2026-11-20 and reported as passing, without per-case notes.
 - F2: delete engine A per the report, promote `src-tauri/src/spike/`, refine entity and escape text mapping, and add real LLM documents as fixtures.
 - Pre-PR audit (`ponytail:ponytail-review`) done on 2026-11-20. Its five findings were fixed in the following commit.
 
