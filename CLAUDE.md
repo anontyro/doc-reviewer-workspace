@@ -57,5 +57,7 @@ schemas/        JSON Schema (generated)        fixtures/    shared test fixtures
 
 - Rust owns persistence, versioning and the export engine; the UI talks to it through typed Tauri commands.
 - A bug fix ships with a fixture or test that fails without it. Never delete or skip a test to go green.
-- Branches: `feature/<T-id>-<slug>`. Commits are small and focused. Run lane checks before committing.
+- Branches: work directly on `main` for now (pre-release, nothing to preserve yet). Feature branches
+  (`feature/<T-id>-<slug>`) and PRs start only when the user updates this line. Commits are small and focused. Run lane
+  checks before committing.
 - SemVer for the app (`0.1.0` = first complete Markdown review loop). Tag at milestone acceptance.
