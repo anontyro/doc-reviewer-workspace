@@ -27,4 +27,3 @@ TypeScript engine compares against the UTF-16 column. A swap of units fails thos
 
 - Every stored anchor needs its bytes valid for that exact file version. A file edited outside the app invalidates the
   range, so re-anchoring uses `exact`, `prefix` and `suffix`, not the offsets alone (F4).
-- Rust must handle a selection that starts or ends inside a multi-byte character by refusing it, not rounding.

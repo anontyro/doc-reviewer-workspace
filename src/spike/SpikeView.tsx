@@ -52,20 +52,25 @@ export default function SpikeView() {
   const source = sourceOf(name);
 
   useEffect(() => {
+    let stale = false; // a slow earlier Rust call must not overwrite a newer render
     void (async () => {
       try {
-        setHtml(
+        const out =
           engine === "ts"
             ? renderMarkdown(source)
-            : await invoke<string>("spike_render_markdown", { source }),
-        );
+            : await invoke<string>("spike_render_markdown", { source });
+        if (!stale) setHtml(out);
       } catch (e) {
+        if (stale) return;
         setHtml("");
         setShown(
           `Engine ${engine} unavailable: ${String(e)} (the Rust engine needs pnpm tauri dev)`,
         );
       }
     })();
+    return () => {
+      stale = true;
+    };
   }, [source, engine]);
 
   const onSelect = async () => {

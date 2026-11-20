@@ -75,7 +75,7 @@ fn collect_inline<'a>(node: &'a AstNode<'a>, src: &Source, block: &mut Block) {
                 }
             }
             (NodeValue::Code(c), Some(span)) => {
-                let raw = &src.text[span.0..span.1];
+                let raw = src.text.get(span.0..span.1).unwrap_or("");
                 let inner = raw.trim_matches('`');
                 if inner == c.literal {
                     block.push_mapped(

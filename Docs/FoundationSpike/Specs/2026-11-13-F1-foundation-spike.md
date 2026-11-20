@@ -347,7 +347,7 @@ None.
 
 The repo is a Tauri 2 + React/TypeScript shell with Rust-canonical domain types, generated JSON Schema and TS types, and a
 two-engine Markdown source-map spike. Both engines pass all 28 shared cases, so Rust (comrak) is chosen by the D17
-tie-break (decisions 0004 and 0005). Web checks (41 tests) and Rust fmt, clippy and tests (15 + 1 + 3) pass.
+tie-break (decisions 0004 and 0005). Web checks (42 tests after the audit fixes) and Rust fmt, clippy and tests (15 + 1 + 3) pass.
 
 ### Changes by package
 
@@ -378,8 +378,7 @@ tie-break (decisions 0004 and 0005). Web checks (41 tests) and Rust fmt, clippy 
 
 - Run the manual testing doc in WKWebView with the network off, and paste the results into the report (not tracked elsewhere).
 - F2: delete engine A per the report, promote `src-tauri/src/spike/`, refine entity and escape text mapping, and add real LLM documents as fixtures.
-- Decision 0005 says Rust refuses a selection that splits a multi-byte character. No test covers it yet.
-- Pre-PR audit (`ponytail:ponytail-review`) is still to do.
+- Pre-PR audit (`ponytail:ponytail-review`) done on 2026-11-20. Its five findings were fixed in the following commit.
 
 ### Rating notes
 
