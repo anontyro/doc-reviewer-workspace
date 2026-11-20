@@ -21,18 +21,13 @@ const doc: OpenedDocument = {
 let root: Root | undefined;
 let host: HTMLElement;
 
-async function mount(handler: (cmd: string) => unknown) {
-  mockIPC((cmd) => (cmd === "list_annotations" ? [] : handler(cmd)));
+async function mount(d: OpenedDocument = doc) {
+  mockIPC((cmd) => (cmd === "list_annotations" ? [] : null));
   host = document.createElement("div");
   document.body.appendChild(host);
   root = createRoot(host);
-  await act(async () => root!.render(<Reader />));
+  await act(async () => root!.render(<Reader doc={d} />));
 }
-
-const clickOpen = () =>
-  act(async () => {
-    host.querySelector("button")!.click();
-  });
 
 afterEach(() => {
   act(() => root?.unmount());
@@ -41,62 +36,34 @@ afterEach(() => {
 });
 
 describe("Reader", () => {
-  it("shows the rendered html after a file is opened", async () => {
-    await mount(() => doc);
-    await clickOpen();
+  it("shows the rendered html of the document it is given", async () => {
+    await mount();
     expect(host.querySelector("article h1")?.textContent).toBe("Rendered title");
-    expect(host.textContent).toContain("a.md");
   });
 
   it("injects the rendered html, never the source text", async () => {
-    await mount(() => doc);
-    await clickOpen();
+    await mount();
     expect(host.querySelector("script")).toBeNull();
     expect(host.textContent).not.toContain("__pwned");
   });
 
-  it("keeps what is open when the dialog is cancelled, with no error", async () => {
-    const answers: unknown[] = [doc, null];
-    await mount(() => answers.shift());
-    await clickOpen();
-    await clickOpen();
-    expect(host.querySelector("article h1")).not.toBeNull();
-    expect(host.querySelector("[role=alert]")).toBeNull();
-  });
-
-  it("shows nothing before a file is opened", async () => {
-    await mount(() => null);
-    await clickOpen();
-    expect(host.querySelector("article")).toBeNull();
-    expect(host.querySelector("[role=alert]")).toBeNull();
-  });
-
-  it("shows a refused file's message and keeps the reader as it was", async () => {
-    let call = 0;
-    await mount(() => {
-      if (call++ === 0) return doc;
-      throw { kind: "not_utf8", message: "file is not UTF-8 text" };
-    });
-    await clickOpen();
-    await clickOpen();
-    expect(host.querySelector("[role=alert]")?.textContent).toBe("file is not UTF-8 text");
-    expect(host.querySelector("article h1")).not.toBeNull();
+  it("has no Open button: opening belongs to the home screen and the explorer", async () => {
+    await mount();
+    expect(host.textContent).not.toContain("Open Markdown");
   });
 
   it("never lets a link in the document navigate the app window", async () => {
-    const withLinks = {
+    await mount({
       ...doc,
       html: '<p><a href="https://example.com/a">remote</a> <a href="other.md">relative</a> <a href="">empty</a></p>',
-    };
-    await mount(() => withLinks);
-    await clickOpen();
+    });
     for (const a of host.querySelectorAll("article a")) {
       const click = new MouseEvent("click", { bubbles: true, cancelable: true });
       a.dispatchEvent(click);
       expect(click.defaultPrevented, a.textContent ?? "").toBe(true);
     }
     const outside = new MouseEvent("click", { bubbles: true, cancelable: true });
-    host.querySelector("button")!.dispatchEvent(outside);
+    host.querySelector("article")!.dispatchEvent(outside);
     expect(outside.defaultPrevented).toBe(false); // other clicks are left alone
   });
 });

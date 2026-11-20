@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   createAnnotation,
   deleteAnnotation,
   listAnnotations,
   updateAnnotation,
   type AnnotationView,
+  type OpenedDocument,
   type ResolvedAnchor,
 } from "../api";
 import type { Capture } from "./capture";
@@ -20,10 +21,10 @@ export function refusal(r: ResolvedAnchor): string | null {
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 /**
- * The open document's comments. Rust owns them: every change goes through a command and the list shown is always
+ * The comments of `doc`, the active document. Rust owns them: every change goes through a command and the list shown is always
  * what Rust returns, never a local copy (F2 spec D19). A failed command leaves the list as it was.
  */
-export function useAnnotations() {
+export function useAnnotations(doc: OpenedDocument) {
   const [views, setViews] = useState<AnnotationView[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,16 +39,30 @@ export function useAnnotations() {
     }
   };
 
-  /** Loads the comments of the document that was just opened, dropping the previous document's. */
-  const reload = async () => {
-    setViews([]);
-    await change(async () => {});
-  };
+  // Loads the comments each time a document is activated. The answer of a document that has since been replaced
+  // is dropped, so one document's comments are never shown under another. setState runs only in the callbacks.
+  useEffect(() => {
+    let current = true;
+    listAnnotations().then(
+      (list) => {
+        if (!current) return;
+        setViews(list);
+        setError(null);
+      },
+      (e) => {
+        if (!current) return;
+        setViews([]); // never leave the previous document's comments showing
+        setError(message(e));
+      },
+    );
+    return () => {
+      current = false;
+    };
+  }, [doc]);
 
   return {
     views,
     error,
-    reload,
     add: (capture: Capture, text: string) =>
       change(() =>
         createAnnotation(

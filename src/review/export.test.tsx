@@ -35,8 +35,7 @@ async function mount() {
   host = document.createElement("div");
   document.body.appendChild(host);
   root = createRoot(host);
-  await act(async () => root!.render(<Reader />));
-  await act(async () => host.querySelector("button")!.click()); // Open
+  await act(async () => root!.render(<Reader doc={doc} />));
 }
 
 afterEach(() => {

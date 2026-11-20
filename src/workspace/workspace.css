@@ -1,0 +1,79 @@
+main:has(.workspace) {
+  max-width: none;
+}
+
+.workspace-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.workspace-bar h2 {
+  margin: 0;
+  flex: 1;
+}
+
+.not-in-project {
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+.workspace-body {
+  display: grid;
+  grid-template-columns: 14rem minmax(0, 1fr) 20rem;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.workspace-body.no-left {
+  grid-template-columns: minmax(0, 1fr) 20rem;
+}
+
+.workspace-body.no-right {
+  grid-template-columns: 14rem minmax(0, 1fr);
+}
+
+.workspace-body.no-left.no-right {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.workspace-centre {
+  overflow: auto;
+  max-height: calc(100vh - 8rem);
+}
+
+.workspace-body > aside {
+  overflow: auto;
+  max-height: calc(100vh - 8rem);
+}
+
+.explorer {
+  list-style: none;
+  padding: 0;
+}
+
+.explorer button {
+  width: 100%;
+  text-align: left;
+}
+
+.explorer button[aria-current="true"] {
+  font-weight: 700;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  border-bottom: 1px solid color-mix(in srgb, currentColor 25%, transparent);
+  margin-bottom: 0.75rem;
+}
+
+.tab.active button[role="tab"] {
+  font-weight: 700;
+}
+
+.empty {
+  opacity: 0.75;
+}

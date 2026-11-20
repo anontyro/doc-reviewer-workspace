@@ -38,8 +38,7 @@ async function mount() {
   host = document.createElement("div");
   document.body.appendChild(host);
   root = createRoot(host);
-  await act(async () => root!.render(<Reader />));
-  await act(async () => host.querySelector("button")!.click());
+  await act(async () => root!.render(<Reader doc={doc} />));
 }
 
 afterEach(() => {
@@ -214,7 +213,9 @@ describe("comment panel", () => {
     await press("Enter", { metaKey: true });
     expect(commentTexts()).toHaveLength(1);
     backend.state.failWith = { kind: "io", message: "cannot read the comments file" };
-    await act(async () => host.querySelector("button")!.click()); // Open another document
+    await act(async () =>
+      root!.render(<Reader doc={{ ...doc, document_id: "doc_ffffffffffffffff" }} />),
+    );
     // Its comments cannot be loaded, so the panel must not still show the previous document's.
     expect(commentTexts()).toEqual([]);
     expect(host.querySelector("aside [role=alert]")?.textContent).toContain("cannot read");

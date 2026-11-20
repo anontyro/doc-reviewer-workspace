@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import type { ProjectView } from "./api";
+import type { OpenedDocument, ProjectView } from "./api";
 import Home from "./project/Home";
-import Reader from "./reader/Reader";
+import Workspace from "./workspace/Workspace";
 
-type View = { kind: "home" } | { kind: "quick" } | { kind: "project"; project: ProjectView };
+type View =
+  | { kind: "home" }
+  | { kind: "quick"; doc: OpenedDocument }
+  | { kind: "project"; project: ProjectView };
 
-/** Two states, home and a document view, held in React state. No router (F3 spec D12). */
+/** Two states, home and workspace, held in React state. No router (F3 spec D12). */
 export default function App() {
   const [view, setView] = useState<View>({ kind: "home" });
   const main = useRef<HTMLElement>(null);
@@ -29,33 +32,11 @@ export default function App() {
       {view.kind === "home" && (
         <Home
           onOpenProject={(project) => setView({ kind: "project", project })}
-          onQuickOpen={() => setView({ kind: "quick" })}
+          onQuickOpen={(doc) => setView({ kind: "quick", doc })}
         />
       )}
-      {view.kind === "quick" && (
-        <>
-          <h2 tabIndex={-1}>Quick open</h2>
-          <button type="button" onClick={home}>
-            Back to projects
-          </button>
-          <Reader />
-        </>
-      )}
-      {view.kind === "project" && (
-        // shortcut: a plain list until the workspace (explorer, tabs) lands in F3 P4.
-        <section>
-          <h2 tabIndex={-1}>{view.project.name}</h2>
-          <p>{view.project.root_path}</p>
-          <button type="button" onClick={home}>
-            Back to projects
-          </button>
-          <ul>
-            {view.project.documents.map((d) => (
-              <li key={d.relative_path}>{d.name}</li>
-            ))}
-          </ul>
-        </section>
-      )}
+      {view.kind === "quick" && <Workspace quickDoc={view.doc} onHome={home} />}
+      {view.kind === "project" && <Workspace project={view.project} onHome={home} />}
     </main>
   );
 }

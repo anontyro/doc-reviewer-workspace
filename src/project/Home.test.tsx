@@ -131,11 +131,22 @@ describe("Home", () => {
     expect(host.querySelector("form")).not.toBeNull();
   });
 
-  it("Quick open goes to the quick view without any command", async () => {
+  it("Quick open shows the file dialog and hands the document over", async () => {
     await mount();
     await click("Quick open");
-    expect(onQuickOpen).toHaveBeenCalledOnce();
-    expect(called("open_markdown")).toHaveLength(0);
+    expect(called("open_markdown")).toHaveLength(1);
+    expect(onQuickOpen).toHaveBeenCalledWith(doc);
+  });
+
+  it("a refused Quick open file shows its message and stays on home", async () => {
+    await mount();
+    mockIPC((cmd) => {
+      if (cmd === "open_markdown") throw { kind: "not_utf8", message: "file is not UTF-8 text" };
+      return [];
+    });
+    await click("Quick open");
+    expect(host.querySelector('[role="alert"]')!.textContent).toBe("file is not UTF-8 text");
+    expect(onQuickOpen).not.toHaveBeenCalled();
   });
 
   it("Remove asks first, says the folder stays, and removes only after confirming", async () => {

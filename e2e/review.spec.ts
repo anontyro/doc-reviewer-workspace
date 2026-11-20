@@ -120,8 +120,7 @@ test("a failed open shows the error and leaves the app usable", async ({ browser
   await installFakeTauri(page, { failOpen: true });
   await page.goto("http://localhost:1420/");
   await page.getByRole("button", { name: "Quick open" }).click();
-  await page.getByRole("button", { name: "Open Markdown file" }).click();
   await expect(page.getByRole("alert")).toContainText("not valid UTF-8");
-  await expect(page.getByRole("button", { name: "Open Markdown file" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Quick open" })).toBeVisible();
   await page.close();
 });

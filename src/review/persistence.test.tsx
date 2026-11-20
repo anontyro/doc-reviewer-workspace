@@ -44,8 +44,7 @@ async function mount(views: AnnotationView[] = []) {
   host = document.createElement("div");
   document.body.appendChild(host);
   root = createRoot(host);
-  await act(async () => root!.render(<Reader />));
-  await act(async () => host.querySelector("button")!.click());
+  await act(async () => root!.render(<Reader doc={doc} />));
 }
 
 afterEach(() => {

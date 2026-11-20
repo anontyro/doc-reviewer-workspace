@@ -64,10 +64,10 @@ describe("App", () => {
     expect(host.querySelector("h2")!.textContent).toBe("Projects");
   });
 
-  it("Quick open shows the reader, and Back returns home", async () => {
+  it("Quick open shows the picked document as not in a project, and Back returns home", async () => {
     await mount();
     await click("Quick open");
-    expect(host.textContent).toContain("Open Markdown file");
+    expect(host.textContent).toContain("Not in a project");
     expect(document.title).toBe("Quick open · LLM Review Workspace");
     await click("Back to projects");
     expect(host.querySelector("h2")!.textContent).toBe("Projects");

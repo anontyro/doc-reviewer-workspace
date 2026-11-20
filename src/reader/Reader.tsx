@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { openMarkdown, type AnnotationView, type OpenedDocument } from "../api";
+import { createPortal } from "react-dom";
+import type { AnnotationView, OpenedDocument } from "../api";
 import ExportPanel from "../review/ExportPanel";
 import FloatingMenu from "../review/FloatingMenu";
 import CommentPanel from "../review/CommentPanel";
@@ -8,27 +9,22 @@ import { useAnnotations } from "../review/useAnnotations";
 import { useSelection } from "../review/useSelection";
 import "../review/review.css";
 
-/** Shows a rendered Markdown file with its comments. The file is read-only: no editing, no source toggle (F2 spec D7). */
-export default function Reader() {
-  const [doc, setDoc] = useState<OpenedDocument | null>(null);
-  const [error, setError] = useState<string | null>(null);
+/**
+ * Shows a rendered Markdown document with its comments. The file is read-only here: no editing, no source toggle
+ * (F2 spec D7). With `sidebar`, the comment and export panels are drawn into that element instead of beside the text
+ * (F3 spec D13, D16).
+ */
+export default function Reader({
+  doc,
+  sidebar,
+}: {
+  doc: OpenedDocument;
+  sidebar?: HTMLElement | null;
+}) {
   const [locked, setLocked] = useState(false);
   const article = useRef<HTMLElement>(null);
   const { selected, restore } = useSelection(article, locked, doc);
-  const { views, error: commentError, reload, add, edit, remove } = useAnnotations();
-
-  const open = async () => {
-    try {
-      const opened = await openMarkdown();
-      if (opened) {
-        setDoc(opened); // cancelled: keep what is open
-        void reload();
-      }
-      setError(null);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    }
-  };
+  const { views, error: commentError, add, edit, remove } = useAnnotations(doc);
 
   useEffect(() => {
     const root = article.current;
@@ -52,42 +48,48 @@ export default function Reader() {
     restore(range);
   };
 
+  const comments = (
+    <CommentPanel
+      views={views}
+      error={commentError}
+      onSelect={jump}
+      onEdit={(id, text) => void edit(id, text)}
+      onDelete={(id) => void remove(id)}
+    />
+  );
+  const exporter = <ExportPanel refreshKey={views} />;
+
   return (
     <section>
-      <button type="button" onClick={() => void open()}>
-        Open Markdown file
-      </button>
-      {doc && <span className="doc-name"> {doc.name}</span>}
-      {error && <p role="alert">{error}</p>}
-      {doc && (
-        <div className="layout">
-          {/* Only the Rust-rendered, comrak-sanitised html is injected, never the source (F2 spec D7). */}
-          <article
-            ref={article}
-            className="reader"
-            tabIndex={-1}
-            // Links in a document must never navigate the app window (no network, no losing the UI).
-            onClick={(e) => {
-              if ((e.target as Element).closest("a")) e.preventDefault();
-            }}
-            dangerouslySetInnerHTML={{ __html: doc.html }}
-          />
-          <CommentPanel
-            views={views}
-            error={commentError}
-            onSelect={jump}
-            onEdit={(id, text) => void edit(id, text)}
-            onDelete={(id) => void remove(id)}
-          />
-          <FloatingMenu
-            selected={selected}
-            onLock={setLocked}
-            onClose={restore}
-            onSave={(c, text) => void add(c, text)}
-          />
-        </div>
-      )}
-      {doc && <ExportPanel refreshKey={views} />}
+      <div className={sidebar ? undefined : "layout"}>
+        {/* Only the Rust-rendered, comrak-sanitised html is injected, never the source (F2 spec D7). */}
+        <article
+          ref={article}
+          className="reader"
+          tabIndex={-1}
+          // Links in a document must never navigate the app window (no network, no losing the UI).
+          onClick={(e) => {
+            if ((e.target as Element).closest("a")) e.preventDefault();
+          }}
+          dangerouslySetInnerHTML={{ __html: doc.html }}
+        />
+        {!sidebar && comments}
+        <FloatingMenu
+          selected={selected}
+          onLock={setLocked}
+          onClose={restore}
+          onSave={(c, text) => void add(c, text)}
+        />
+      </div>
+      {sidebar
+        ? createPortal(
+            <>
+              {comments}
+              {exporter}
+            </>,
+            sidebar,
+          )
+        : exporter}
     </section>
   );
 }

@@ -26,6 +26,11 @@ export function fakeBackend(doc: OpenedDocument) {
     library: [] as LibraryItem[],
     /** What a folder or file dialog picks. null means the user cancelled. */
     pick: null as ProjectView | null,
+    /** The documents `open_project_document` answers, by relative path. Others answer `doc`. */
+    docs: {} as Record<string, OpenedDocument>,
+    /** Comments of the documents that are not active. Rust keeps one active document and its comments. */
+    parked: {} as Record<string, AnnotationView[]>,
+    active: "",
   };
 
   state.feedback = () => `# Review Instructions\n\n${state.views.length} comment(s)\n`;
@@ -53,7 +58,12 @@ export function fakeBackend(doc: OpenedDocument) {
       case "remove_from_library":
         state.library = state.library.filter((i) => i.project_id !== a.projectId);
         return null;
-      case "open_project_document":
+      case "open_project_document": {
+        state.parked[state.active] = state.views;
+        state.active = a.relativePath;
+        state.views = state.parked[a.relativePath] ?? [];
+        return state.docs[a.relativePath] ?? doc;
+      }
       case "save_document":
         return doc;
       case "resolve_selection":

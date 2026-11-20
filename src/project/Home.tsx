@@ -1,18 +1,20 @@
 import { useState } from "react";
 import {
   createProject,
+  openMarkdown,
   openProject,
   openProjectAt,
   removeFromLibrary,
   renameProject,
   type LibraryItem,
+  type OpenedDocument,
   type ProjectView,
 } from "../api";
 import { message, timeAgo, useLibrary } from "./useLibrary";
 
 interface Props {
   onOpenProject: (project: ProjectView) => void;
-  onQuickOpen: () => void;
+  onQuickOpen: (doc: OpenedDocument) => void;
 }
 
 /** The start screen: recent projects and the ways to open something (F3 spec D11). */
@@ -49,7 +51,15 @@ export default function Home({ onOpenProject, onQuickOpen }: Props) {
         <button type="button" onClick={() => void enter(openProject)}>
           Open folder
         </button>
-        <button type="button" onClick={onQuickOpen}>
+        <button
+          type="button"
+          onClick={() =>
+            void run(async () => {
+              const doc = await openMarkdown(); // null: cancelled
+              if (doc) onQuickOpen(doc);
+            })
+          }
+        >
           Quick open
         </button>
       </div>

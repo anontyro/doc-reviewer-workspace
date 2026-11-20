@@ -16,17 +16,29 @@ export interface FakeProject {
   missing: boolean;
 }
 
+/** The second document of a fake project. */
+export const NOTES_HTML = `<h1>Notes</h1>
+<p>Second document text.</p>`;
+
+/**
+ * Replaces the Tauri bridge with a small in-page Rust stand-in. Resolves by counting the quote with its context.
+ * Like Rust it has one active document, and comments belong to the document they were made on.
+ */
 export async function installFakeTauri(
   page: Page,
   opts: { failOpen?: boolean; library?: FakeProject[]; pick?: unknown } = {},
 ) {
   await page.addInitScript(
-    ({ html, failOpen, library, pick }) => {
-      const text = new DOMParser().parseFromString(html, "text/html").body.textContent ?? "";
+    ({ html, notes, failOpen, library, pick }) => {
+      const pages: Record<string, string> = { "plan.md": html, "notes.md": notes };
+      const textOf = (h: string) =>
+        new DOMParser().parseFromString(h, "text/html").body.textContent ?? "";
+      type View = { annotation: Record<string, unknown>; current: unknown; stale: boolean };
+      const comments: Record<string, View[]> = {};
+      let active = "plan.md";
       let next = 1;
-      let views: { annotation: Record<string, unknown>; current: unknown; stale: boolean }[] = [];
       const resolve = (a: { selected: string; prefix: string; suffix: string }) => {
-        const n = text.split(a.prefix + a.selected + a.suffix).length - 1;
+        const n = textOf(pages[active]).split(a.prefix + a.selected + a.suffix).length - 1;
         return {
           confidence: n === 1 ? "resolved" : n === 0 ? "orphaned" : "ambiguous",
           heading_path: ["Plan"],
@@ -34,6 +46,15 @@ export async function installFakeTauri(
           candidates: n,
         };
       };
+      const opened = (name: string) => ({
+        path: `/tmp/${name}`,
+        name,
+        document_id: `doc_${name.length.toString(16).padStart(16, "0")}`,
+        version_id: "ver_0123456789abcdef",
+        source_hash: "0".repeat(64),
+        source: "",
+        html: pages[name],
+      });
       const w = window as unknown as Record<string, unknown>;
       // Every command the app sends, so a test can check what was and was not called.
       const calls: { cmd: string; args: unknown }[] = [];
@@ -43,7 +64,11 @@ export async function installFakeTauri(
         id: i.project_id,
         name: i.name,
         root_path: i.root_path,
-        documents: [{ relative_path: "plan.md", name: "plan.md" }],
+        documents: [
+          { relative_path: "plan.md", name: "plan.md" },
+          { relative_path: "notes.md", name: "notes.md" },
+          { relative_path: ".plan.md.tmp-1", name: ".plan.md.tmp-1" },
+        ],
       });
       w.__TAURI_INTERNALS__ = {
         transformCallback: () => 0,
@@ -64,20 +89,18 @@ export async function installFakeTauri(
           }
           if (cmd === "open_markdown") {
             if (failOpen) throw { kind: "not_utf8", message: "not valid UTF-8" };
-            return {
-              path: "/tmp/plan.md",
-              name: "plan.md",
-              document_id: "doc_0123456789abcdef",
-              version_id: "ver_0123456789abcdef",
-              source_hash: "0".repeat(64),
-              source: "",
-              html,
-            };
+            active = "plan.md";
+            return opened("plan.md");
+          }
+          if (cmd === "open_project_document") {
+            if (!(args.relativePath in pages)) throw { kind: "invalid", message: "not a document" };
+            active = args.relativePath;
+            return opened(active);
           }
           if (cmd === "resolve_selection") return resolve(args as never);
-          if (cmd === "list_annotations") return views;
+          if (cmd === "list_annotations") return comments[active] ?? [];
           if (cmd === "generate_feedback")
-            return views.map((v) => `- ${v.annotation.text}`).join("\n");
+            return (comments[active] ?? []).map((v) => `- ${v.annotation.text}`).join("\n");
           if (cmd === "create_annotation") {
             const id = `rev_${String(next++).padStart(4, "0")}`;
             const annotation = {
@@ -99,7 +122,10 @@ export async function installFakeTauri(
               created_at: "2026-11-20T10:00:00Z",
               updated_at: "2026-11-20T10:00:00Z",
             };
-            views = [...views, { annotation, current: resolve(args as never), stale: false }];
+            comments[active] = [
+              ...(comments[active] ?? []),
+              { annotation, current: resolve(args as never), stale: false },
+            ];
             return annotation;
           }
           throw new Error(`unexpected command ${cmd}`);
@@ -108,6 +134,7 @@ export async function installFakeTauri(
     },
     {
       html: HTML,
+      notes: NOTES_HTML,
       failOpen: opts.failOpen ?? false,
       library: opts.library ?? [],
       pick: opts.pick ?? null,
@@ -149,6 +176,5 @@ export async function selectPhrase(page: Page, phrase: string, nth = 0) {
 export async function openDoc(page: Page) {
   await page.goto("/");
   await page.getByRole("button", { name: "Quick open" }).click();
-  await page.getByRole("button", { name: "Open Markdown file" }).click();
   await page.locator("article h1").waitFor();
 }
