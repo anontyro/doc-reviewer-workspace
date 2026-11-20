@@ -1,5 +1,8 @@
 use crate::document::{open_path, AppState, CommandError, ErrorKind, OpenedDocument};
+use crate::domain::entities::Annotation;
 use crate::markdown::{resolve_anchor, ResolvedAnchor};
+use crate::store::annotations::now_rfc3339;
+use crate::store::{AnnotationView, Store};
 use tauri::{AppHandle, State};
 use tauri_plugin_dialog::DialogExt;
 
@@ -35,4 +38,45 @@ pub fn resolve_selection(
     suffix: String,
 ) -> Result<ResolvedAnchor, CommandError> {
     state.with_open(|doc| resolve_anchor(&doc.source, &selected, &prefix, &suffix))
+}
+
+/// Saves a comment on a selection of the open document. Rust resolves the selection itself and refuses anything but
+/// one exact match (F2 spec D19).
+#[tauri::command]
+pub fn create_annotation(
+    state: State<'_, AppState>,
+    store: State<'_, Store>,
+    selected: String,
+    prefix: String,
+    suffix: String,
+    text: String,
+) -> Result<Annotation, CommandError> {
+    state.with_open(|doc| store.create(doc, &selected, &prefix, &suffix, &text, &now_rfc3339()))?
+}
+
+#[tauri::command]
+pub fn list_annotations(
+    state: State<'_, AppState>,
+    store: State<'_, Store>,
+) -> Result<Vec<AnnotationView>, CommandError> {
+    state.with_open(|doc| store.list(doc))?
+}
+
+#[tauri::command]
+pub fn update_annotation(
+    state: State<'_, AppState>,
+    store: State<'_, Store>,
+    id: String,
+    text: String,
+) -> Result<Annotation, CommandError> {
+    state.with_open(|doc| store.update(doc, &id, &text, &now_rfc3339()))?
+}
+
+#[tauri::command]
+pub fn delete_annotation(
+    state: State<'_, AppState>,
+    store: State<'_, Store>,
+    id: String,
+) -> Result<(), CommandError> {
+    state.with_open(|doc| store.delete(doc, &id))?
 }

@@ -7,6 +7,9 @@
     "annotation": {
       "$ref": "#/$defs/Annotation"
     },
+    "annotation_file": {
+      "$ref": "#/$defs/AnnotationFile"
+    },
     "document": {
       "$ref": "#/$defs/Document"
     },
@@ -33,7 +36,8 @@
     "review_round",
     "annotation",
     "export_snapshot",
-    "library_entry"
+    "library_entry",
+    "annotation_file"
   ],
   "$defs": {
     "Anchor": {
@@ -151,6 +155,41 @@
         "expand",
         "question",
         "approve"
+      ]
+    },
+    "AnnotationFile": {
+      "description": "The one file that holds every comment on a document (F2 spec D15). F3 may replace it with project storage.",
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/Annotation"
+          }
+        },
+        "document_id": {
+          "$ref": "#/$defs/DocumentId"
+        },
+        "next_sequence": {
+          "description": "Next `rev_NNNN` sequence number. It only grows, so a deleted id is never reused (F2 spec D17).",
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0
+        },
+        "path": {
+          "description": "Path the document had when last saved. Informational only: identity is `document_id`.",
+          "type": "string"
+        },
+        "schema_version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "document_id",
+        "path",
+        "next_sequence",
+        "annotations"
       ]
     },
     "AnnotationId": {

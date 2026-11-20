@@ -4,11 +4,13 @@ pub mod anchor;
 pub mod entities;
 pub mod export;
 pub mod schema_version;
+pub mod store;
 
 use entities::{
     Annotation, Document, DocumentVersion, ExportSnapshot, LibraryEntry, Project, ReviewRound,
 };
 use schemars::{schema_for, JsonSchema};
+use store::AnnotationFile;
 
 /// Root used only to emit one schema holding every entity under `$defs`. Never serialised.
 #[derive(JsonSchema)]
@@ -21,6 +23,7 @@ struct DomainSchemas {
     annotation: Annotation,
     export_snapshot: ExportSnapshot,
     library_entry: LibraryEntry,
+    annotation_file: AnnotationFile,
 }
 
 /// `(file name under schemas/v1, pretty JSON)` for every generated schema.
