@@ -1,7 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { Annotation } from "./domain/generated/domain.schema";
 
-// shortcut: these shapes mirror the Rust structs by hand. Generate them from Rust when the command set grows (F3).
+// shortcut: these shapes mirror the Rust structs by hand. Generate them from Rust if they drift.
 export interface OpenedDocument {
   path: string;
   name: string;
@@ -20,7 +20,19 @@ export interface ResolvedAnchor {
   candidates: number;
 }
 
-export type ErrorKind = "no_document" | "not_utf8" | "too_large" | "io" | "invalid";
+/** Every `ErrorKind` Rust can return. A test compares this list with the Rust enum (F3 spec D10). */
+export const ERROR_KINDS = [
+  "no_document",
+  "not_utf8",
+  "too_large",
+  "io",
+  "invalid",
+  "exists",
+  "not_project",
+  "missing",
+  "conflict",
+] as const;
+export type ErrorKind = (typeof ERROR_KINDS)[number];
 
 /** What every Rust command rejects with (F2 spec D5). */
 export class CommandError extends Error {
@@ -47,6 +59,46 @@ async function call<T>(command: string, args?: Record<string, unknown>): Promise
     throw toError(e);
   }
 }
+
+/** A project and its documents (F3 spec D5). */
+export interface ProjectView {
+  id: string;
+  name: string;
+  root_path: string;
+  documents: { relative_path: string; name: string }[];
+}
+
+/** One project in the library. `missing` means its folder is not where it was (F3 spec D4). */
+export interface LibraryItem {
+  project_id: string;
+  name: string;
+  root_path: string;
+  last_opened_at: string;
+  missing: boolean;
+}
+
+// Tauri turns a Rust argument `project_id` into `projectId` on the JS side, so arguments below are camelCase.
+
+/** Shows a folder dialog and makes a project there. Resolves to null when the user cancels. */
+export const createProject = (name: string) => call<ProjectView | null>("create_project", { name });
+/** Shows a folder dialog and opens the project in it. Resolves to null when the user cancels. */
+export const openProject = () => call<ProjectView | null>("open_project");
+export const openProjectAt = (projectId: string) =>
+  call<ProjectView>("open_project_at", { projectId });
+export const listLibrary = () => call<LibraryItem[]>("list_library");
+export const renameProject = (projectId: string, name: string) =>
+  call<ProjectView>("rename_project", { projectId, name });
+/** Forgets the project in the library. Nothing on disk is deleted (F3 spec D8). */
+export const removeFromLibrary = (projectId: string) =>
+  call<null>("remove_from_library", { projectId });
+/** Shows a file dialog and copies a Markdown file into the open project. Resolves to null when cancelled. */
+export const addDocument = () => call<ProjectView | null>("add_document");
+/** Reads the file fresh from disk and makes it the active document (F3 spec D14). */
+export const openProjectDocument = (relativePath: string) =>
+  call<OpenedDocument>("open_project_document", { relativePath });
+/** Saves text over the active file, or rejects with `conflict` if the file changed since `expectedHash` (F3 spec D21). */
+export const saveDocument = (text: string, expectedHash: string) =>
+  call<OpenedDocument>("save_document", { text, expectedHash });
 
 /** Shows the native dialog. Resolves to null when the user cancels. */
 export const openMarkdown = () => call<OpenedDocument | null>("open_markdown");

@@ -1,4 +1,10 @@
-import type { AnnotationView, OpenedDocument, ResolvedAnchor } from "../api";
+import type {
+  AnnotationView,
+  LibraryItem,
+  OpenedDocument,
+  ProjectView,
+  ResolvedAnchor,
+} from "../api";
 
 /** What the fake Rust side answers, and every command it was asked. Test support only. */
 export function fakeBackend(doc: OpenedDocument) {
@@ -16,6 +22,10 @@ export function fakeBackend(doc: OpenedDocument) {
     /** Commands that reject with this error instead of answering. */
     failWith: null as { kind: string; message: string } | null,
     next: 1,
+    /** The recent projects `list_library` answers. */
+    library: [] as LibraryItem[],
+    /** What a folder or file dialog picks. null means the user cancelled. */
+    pick: null as ProjectView | null,
   };
 
   state.feedback = () => `# Review Instructions\n\n${state.views.length} comment(s)\n`;
@@ -26,6 +36,25 @@ export function fakeBackend(doc: OpenedDocument) {
     if (state.failWith && cmd !== "open_markdown") throw state.failWith;
     switch (cmd) {
       case "open_markdown":
+        return doc;
+      case "list_library":
+        return state.library;
+      case "create_project":
+      case "open_project":
+      case "add_document":
+        return state.pick;
+      case "open_project_at":
+      case "rename_project": {
+        const item = state.library.find((i) => i.project_id === a.projectId);
+        if (!item) throw { kind: "missing", message: "that project is not in the library" };
+        if (cmd === "rename_project") item.name = a.name;
+        return { id: item.project_id, name: item.name, root_path: item.root_path, documents: [] };
+      }
+      case "remove_from_library":
+        state.library = state.library.filter((i) => i.project_id !== a.projectId);
+        return null;
+      case "open_project_document":
+      case "save_document":
         return doc;
       case "resolve_selection":
         return state.resolve;

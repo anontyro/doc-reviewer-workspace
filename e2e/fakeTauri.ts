@@ -8,9 +8,20 @@ export const HTML = `<h1>Plan</h1>
 <p>See <a href="https://example.com/out" id="ext">the docs</a> for more.</p>`;
 
 /** Replaces the Tauri bridge with a small in-page Rust stand-in. Resolves by counting the quote with its context. */
-export async function installFakeTauri(page: Page, opts: { failOpen?: boolean } = {}) {
+export interface FakeProject {
+  project_id: string;
+  name: string;
+  root_path: string;
+  last_opened_at: string;
+  missing: boolean;
+}
+
+export async function installFakeTauri(
+  page: Page,
+  opts: { failOpen?: boolean; library?: FakeProject[]; pick?: unknown } = {},
+) {
   await page.addInitScript(
-    ({ html, failOpen }) => {
+    ({ html, failOpen, library, pick }) => {
       const text = new DOMParser().parseFromString(html, "text/html").body.textContent ?? "";
       let next = 1;
       let views: { annotation: Record<string, unknown>; current: unknown; stale: boolean }[] = [];
@@ -24,9 +35,33 @@ export async function installFakeTauri(page: Page, opts: { failOpen?: boolean } 
         };
       };
       const w = window as unknown as Record<string, unknown>;
+      // Every command the app sends, so a test can check what was and was not called.
+      const calls: { cmd: string; args: unknown }[] = [];
+      w.__calls = calls;
+      let items = library as FakeProject[];
+      const view = (i: FakeProject) => ({
+        id: i.project_id,
+        name: i.name,
+        root_path: i.root_path,
+        documents: [{ relative_path: "plan.md", name: "plan.md" }],
+      });
       w.__TAURI_INTERNALS__ = {
         transformCallback: () => 0,
         invoke: async (cmd: string, args: Record<string, string>) => {
+          calls.push({ cmd, args });
+          if (cmd === "list_library") return items;
+          if (cmd === "create_project" || cmd === "open_project") return pick;
+          if (cmd === "open_project_at" || cmd === "rename_project") {
+            const item = items.find((i) => i.project_id === args.projectId);
+            if (!item || (cmd === "open_project_at" && item.missing))
+              throw { kind: "missing", message: "that folder is gone" };
+            if (cmd === "rename_project") item.name = args.name;
+            return view(item);
+          }
+          if (cmd === "remove_from_library") {
+            items = items.filter((i) => i.project_id !== args.projectId);
+            return null;
+          }
           if (cmd === "open_markdown") {
             if (failOpen) throw { kind: "not_utf8", message: "not valid UTF-8" };
             return {
@@ -71,7 +106,12 @@ export async function installFakeTauri(page: Page, opts: { failOpen?: boolean } 
         },
       };
     },
-    { html: HTML, failOpen: opts.failOpen ?? false },
+    {
+      html: HTML,
+      failOpen: opts.failOpen ?? false,
+      library: opts.library ?? [],
+      pick: opts.pick ?? null,
+    },
   );
 }
 
@@ -108,6 +148,7 @@ export async function selectPhrase(page: Page, phrase: string, nth = 0) {
 
 export async function openDoc(page: Page) {
   await page.goto("/");
+  await page.getByRole("button", { name: "Quick open" }).click();
   await page.getByRole("button", { name: "Open Markdown file" }).click();
   await page.locator("article h1").waitFor();
 }
