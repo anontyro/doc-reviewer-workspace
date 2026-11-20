@@ -12,7 +12,7 @@ Work item: F3 (PRD milestone M2, personal alpha). Releases map to these tasks:
 
 Branch: none. Work on `main` until CLAUDE.md says otherwise.
 Design: mockups cited by path, not copied: `Docs/01_project_library.png` (home), `Docs/02_markdown_review.png` (workspace layout).
-Status: **draft 2026-11-20**. No open questions.
+Status: **approved 2026-11-20**.
 Manual testing: `Docs/ProjectsAndPersistence/Testing/MANUAL-TESTING-F3-projects-and-persistence.md`.
 Decisions: `Docs/ProjectsAndPersistence/Decisions/` (README lists every planned record and the package that writes it).
 

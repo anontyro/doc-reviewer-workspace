@@ -28,7 +28,7 @@ gate passes, because earlier spike results change their shape.
 |---|---|---|---|---|---|---|
 | F1 | `FoundationSpike` | M0 | T-001, T-002, T-003 | Key risks understood or mitigated (§12.2) | [F1 spec](FoundationSpike/Specs/2026-11-13-F1-foundation-spike.md) | Done |
 | F2 | `MarkdownPrototype` | M1 | T-004, T-005, T-006, T-007 | Real LLM handoff works; no comments lost on restart (§5.1) | [F2 spec](MarkdownPrototype/Specs/2026-11-20-F2-markdown-prototype.md) | Done |
-| F3 | `ProjectsAndPersistence` | M2 → v0.1 alpha | T-008, T-009, T-010, T-016 | Review resumes after restart; real project managed safely (§5.2) | [F3 spec](ProjectsAndPersistence/Specs/2026-11-20-F3-projects-and-persistence.md) | Spec drafted, awaiting approval |
+| F3 | `ProjectsAndPersistence` | M2 → v0.1 alpha | T-008, T-009, T-010, T-016 | Review resumes after restart; real project managed safely (§5.2) | [F3 spec](ProjectsAndPersistence/Specs/2026-11-20-F3-projects-and-persistence.md) | Approved, building (wave 1) |
 | F4 | `ExportAndVersions` | M3 → v0.1.0 | T-011, T-012, T-013, T-014, T-015 | One reliable two-version LLM cycle; no data loss (§5.3) | not written | Blocked on F3 |
 | F5 | `PdfReview` | M4 → v0.2.0 | T-017, T-018 | Markdown and text PDFs reviewed and exported reliably (§5.4) | not written | Blocked on F4 |
 
