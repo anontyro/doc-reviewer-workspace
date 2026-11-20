@@ -138,15 +138,15 @@ With Wi-Fi off, run cases 1, 5, 6, 9 and 11 again. Then run `shasum -a 256` on t
 
 | # | Release | Area | Pass / Fail | Notes |
 |---|---|---|---|---|
-| 1 | R1a | Open and cancel | | |
-| 2 | R1a | Bad files | | |
-| 3 | R1b | Rendering | | |
-| 4 | R1b | Hostile content | | |
-| 5 | R2 | Menu | | |
-| 6 | R2 | Keyboard flow | | |
-| 7 | R2 | Refused selections | | |
-| 8 | R2 | Highlight and jump | | |
-| 9 | R3 | Restart | | |
-| 10 | R3 | Changed file | | |
-| 11 | R4 | LLM handoff | | |
-| 12 | all | Offline and source unchanged | | |
+| 1 | R1a | Open and cancel | Pass (reported) | |
+| 2 | R1a | Bad files | Pass (reported) | |
+| 3 | R1b | Rendering | Pass (reported) | |
+| 4 | R1b | Hostile content | Pass (reported) | |
+| 5 | R2 | Menu | Pass (reported) | |
+| 6 | R2 | Keyboard flow | Pass (reported) | |
+| 7 | R2 | Refused selections | Pass (reported) | |
+| 8 | R2 | Highlight and jump | Pass (reported) | |
+| 9 | R3 | Restart | Pass (reported) | |
+| 10 | R3 | Changed file | Pass (reported) | |
+| 11 | R4 | LLM handoff | Pass (reported) | |
+| 12 | all | Offline and source unchanged | Pass (reported) | |

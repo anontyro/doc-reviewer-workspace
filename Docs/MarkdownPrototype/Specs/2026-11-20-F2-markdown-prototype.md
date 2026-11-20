@@ -12,7 +12,7 @@ Work item: F2 (PRD milestone M1). Releases map to these tasks:
 
 Branch: `feature/F2-markdown-prototype`.
 Design: mockups cited by path, not copied: `Docs/02_markdown_review.png`, `Docs/03_inline_annotation.png`, `Docs/04_export_preview.png`.
-Status: **approved 2026-11-20**.
+Status: **completed 2026-11-20**.
 Manual testing: `Docs/MarkdownPrototype/Testing/MANUAL-TESTING-F2-markdown-prototype.md`.
 Decisions: `Docs/MarkdownPrototype/Decisions/` (README lists every planned record and the package that writes it).
 
@@ -395,3 +395,54 @@ Shared acceptance for every package:
 
 - **Q1 → D13.** Assume the CSS Custom Highlight API exists in the target WKWebView. If not, there is no highlight and the
   panel still shows the quote. Manual case 8 records the macOS version.
+
+## Completion
+
+- Completed: 2026-11-20
+- Range: `1bc3ce9..859dd19`
+- Rating: 4/5 (user)
+- Packages: 7/7 done
+- Acceptance criteria: 43/43 verified
+- Deviations: 9
+- Files outside ownedFiles: 5
+- Owned files untouched: 1
+
+### Summary
+
+A user can open a Markdown file through a native dialog, read it rendered and sanitised, select text to add a comment, and see saved comments highlighted. Comments persist in an app-data JSON file and survive restart. A deterministic feedback prompt can be previewed and copied for an LLM. In code, engine A (TypeScript) and the spike view were deleted, the Rust engine was promoted, and the store, exporter and web layers were added. All 12 manual cases passed (reported by the user). Web 88 and Rust 44 tests pass, with fmt and clippy clean.
+
+### Changes by package
+
+| Package | Status | Notes |
+|---|---|---|
+| P1 | done | Engine promoted to `markdown/`, `open_markdown` and `resolve_selection`, spike module and tests removed. |
+| P2 | done | Reader, typed `api.ts`, `capture.ts` moved, `src/spike/*` deleted. `App.test.tsx` was not touched (its checks live in `Reader.test.tsx`). |
+| P3 | done | Floating menu, composer, panel, highlights, shortcuts. |
+| P4 | done | Store with atomic writes, `AnnotationFile` schema, ids, CRUD commands. |
+| P5 | done | Panel wired to Rust, badges for ambiguous, orphaned and stale, `AnnotationFile` validation. |
+| P6 | done | `build_feedback` with five reviewed snapshot files. |
+| P7 | done | Export panel with preview and copy, decision 0004, overview update. |
+
+### Deviations
+
+- **P4 · extra test files.** Spec: P4 owns its own tests only. Built: it edited `tests/open_document.rs` and added `tests/common/mod.rs` for a shared temp-dir helper. Why: both store and open tests needed it.
+- **P4 · error kind.** Spec: errors use the listed kinds. Built: unreadable or newer-major annotation files use `io`. Why: no better kind in the agreed set.
+- **P4 · `time` features.** Spec: `time` with `formatting`. Built: also `parsing`. Why: RFC 3339 timestamps are read back.
+- **P6 · `store/annotations.rs`.** Spec: not owned by P6. Built: added a `view()` helper. Why: the list command and exporter share the same view.
+- **P5 · test support.** Spec: P5 owns the panel wiring. Built: it also edited `Reader.tsx`, `FloatingMenu.tsx`, `Reader.test.tsx`, `review.test.tsx` and added `review/fakeBackend.ts`. Why: a shared fake of the Rust commands was needed for tests.
+- **P7 · mount point.** Spec: mount `ExportPanel` in `App.tsx`. Built: mounted in `Reader.tsx`, and extended `fakeBackend.ts`. Why: the panel needs the reader's annotation list.
+- **Audit fix · `Reader.test.tsx`.** Spec: P2-owned. Built: edited after the audit to add the inert-link test. Why: the audit found links navigated the app window.
+- **D9 · spike removal.** Spec: delete spike files. Built: done, plus `.vitest/` output ignored. Why: as planned.
+- **api.ts shapes.** Spec: generated types. Built: `api.ts` shapes are hand-copied, with a `shortcut:` comment. Why: command types are not in the schema generator yet.
+
+### Follow-ups
+
+- Two app instances can overwrite each other's last change (decision 0003). A single-instance plugin needs its own decision.
+- Delete has no confirmation or undo.
+- Moved or renamed files are new documents until F3.
+- Highlight performance with many comments on a large file was not measured.
+- An automated end-to-end suite for the real app (see the answer to the user's question).
+
+### Rating notes
+
+The spec held up with no re-plan. It missed shared test support (`fakeBackend`, temp helper) and the link-navigation risk, both found during the build or audit.
