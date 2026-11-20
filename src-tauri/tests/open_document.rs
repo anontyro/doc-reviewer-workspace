@@ -100,3 +100,20 @@ fn web_side_gets_no_dialog_fs_or_shell_permission() {
     let json: serde_json::Value = serde_json::from_str(&caps).unwrap();
     assert_eq!(json["permissions"], serde_json::json!(["core:default"]));
 }
+
+#[test]
+fn csp_keeps_remote_content_blocked() {
+    // Rust renders `![x](https://...)` as a real <img>, so only the CSP stops the request.
+    let conf =
+        fs::read_to_string(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tauri.conf.json"))
+            .unwrap();
+    let json: serde_json::Value = serde_json::from_str(&conf).unwrap();
+    let csp = json["app"]["security"]["csp"]
+        .as_str()
+        .expect("a CSP must be set");
+    assert!(csp.starts_with("default-src 'self'"), "{csp}");
+    assert!(
+        !csp.contains("http") && !csp.contains('*') && !csp.contains("img-src"),
+        "{csp}"
+    );
+}

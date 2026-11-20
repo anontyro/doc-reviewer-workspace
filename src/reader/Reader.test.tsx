@@ -82,4 +82,21 @@ describe("Reader", () => {
     expect(host.querySelector("[role=alert]")?.textContent).toBe("file is not UTF-8 text");
     expect(host.querySelector("article h1")).not.toBeNull();
   });
+
+  it("never lets a link in the document navigate the app window", async () => {
+    const withLinks = {
+      ...doc,
+      html: '<p><a href="https://example.com/a">remote</a> <a href="other.md">relative</a> <a href="">empty</a></p>',
+    };
+    await mount(() => withLinks);
+    await clickOpen();
+    for (const a of host.querySelectorAll("article a")) {
+      const click = new MouseEvent("click", { bubbles: true, cancelable: true });
+      a.dispatchEvent(click);
+      expect(click.defaultPrevented, a.textContent ?? "").toBe(true);
+    }
+    const outside = new MouseEvent("click", { bubbles: true, cancelable: true });
+    host.querySelector("button")!.dispatchEvent(outside);
+    expect(outside.defaultPrevented).toBe(false); // other clicks are left alone
+  });
 });

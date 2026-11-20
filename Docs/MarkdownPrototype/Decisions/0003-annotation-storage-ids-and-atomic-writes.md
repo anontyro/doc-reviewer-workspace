@@ -33,3 +33,5 @@ means the UI cannot save a range that the engine would not accept.
 - A file that cannot be read stays unusable until someone fixes or removes it. There is no repair or backup step yet.
   The first migration must add one (decision FoundationSpike 0003).
 - Delete has no confirmation or undo.
+- The write lock is inside one process. Two app instances on the same file can overwrite each other's last change.
+  Blocking a second instance needs `tauri-plugin-single-instance`, a new dependency that needs its own decision.

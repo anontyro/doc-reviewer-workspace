@@ -66,6 +66,10 @@ export default function Reader() {
             ref={article}
             className="reader"
             tabIndex={-1}
+            // Links in a document must never navigate the app window (no network, no losing the UI).
+            onClick={(e) => {
+              if ((e.target as Element).closest("a")) e.preventDefault();
+            }}
             dangerouslySetInnerHTML={{ __html: doc.html }}
           />
           <CommentPanel

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { resolveSelection, type ResolvedAnchor } from "../api";
+import { resolveSelection } from "../api";
 import type { Capture } from "./capture";
 import { refusal } from "./useAnnotations";
 import type { Rect, Selected } from "./useSelection";
@@ -7,7 +7,7 @@ import type { Rect, Selected } from "./useSelection";
 type State =
   | { mode: "closed" }
   | { mode: "message"; text: string; rect: Rect }
-  | { mode: "composer"; capture: Capture; resolved: ResolvedAnchor; rect: Rect; range: Range };
+  | { mode: "composer"; capture: Capture; rect: Rect; range: Range };
 
 const MENU_HEIGHT = 48;
 
@@ -46,7 +46,7 @@ export default function FloatingMenu({ selected, onLock, onClose, onSave }: Prop
       setState(
         why
           ? { mode: "message", rect, text: why }
-          : { mode: "composer", rect, capture: selected.capture, resolved, range: selected.range },
+          : { mode: "composer", rect, capture: selected.capture, range: selected.range },
       );
     } catch (e) {
       setState({ mode: "message", rect, text: e instanceof Error ? e.message : String(e) });
