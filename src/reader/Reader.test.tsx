@@ -22,7 +22,7 @@ let root: Root | undefined;
 let host: HTMLElement;
 
 async function mount(handler: (cmd: string) => unknown) {
-  mockIPC((cmd) => handler(cmd));
+  mockIPC((cmd) => (cmd === "list_annotations" ? [] : handler(cmd)));
   host = document.createElement("div");
   document.body.appendChild(host);
   root = createRoot(host);

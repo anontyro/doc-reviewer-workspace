@@ -47,3 +47,13 @@
 .reader:focus {
   outline: none;
 }
+
+.comment-badge {
+  display: inline-block;
+  margin: 0 0.4rem 0.25rem 0;
+  padding: 0 0.4rem;
+  border: 1px solid #c2410c;
+  border-radius: 4px;
+  color: #9a3412;
+  font-size: 0.8rem;
+}

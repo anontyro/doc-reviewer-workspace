@@ -4,6 +4,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, describe, expect, it } from "vitest";
 import type { OpenedDocument, ResolvedAnchor } from "../api";
+import { fakeBackend } from "./fakeBackend";
 import Reader from "../reader/Reader";
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -26,11 +27,14 @@ const resolved: ResolvedAnchor = {
 
 let root: Root | undefined;
 let host: HTMLElement;
-let answer: ResolvedAnchor;
+let backend: ReturnType<typeof fakeBackend>;
+const answerWith = (r: ResolvedAnchor) => {
+  backend.state.resolve = r;
+};
 
 async function mount() {
-  answer = resolved;
-  mockIPC((cmd) => (cmd === "open_markdown" ? doc : answer));
+  backend = fakeBackend(doc);
+  mockIPC(backend.handler);
   host = document.createElement("div");
   document.body.appendChild(host);
   root = createRoot(host);
@@ -154,7 +158,7 @@ describe("composer", () => {
 
   it("refuses an ambiguous selection with a message and creates no comment", async () => {
     await mount();
-    answer = { ...resolved, confidence: "ambiguous", source_range: null, candidates: 2 };
+    answerWith({ ...resolved, confidence: "ambiguous", source_range: null, candidates: 2 });
     await selectBeta();
     await shortcut();
     expect(textarea()).toBeNull();
@@ -164,13 +168,13 @@ describe("composer", () => {
 
   it("refuses an orphaned selection with a message", async () => {
     await mount();
-    answer = {
+    answerWith({
       ...resolved,
       confidence: "orphaned",
       source_range: null,
       candidates: 0,
       heading_path: null,
-    };
+    });
     await selectBeta();
     await shortcut();
     expect(textarea()).toBeNull();
@@ -202,14 +206,17 @@ describe("comment panel", () => {
     expect(document.activeElement).toBe(article());
   });
 
-  it("starts a new document with no comments", async () => {
+  it("drops the previous document's comments when another document is opened", async () => {
     await mount();
     await selectBeta();
     await shortcut();
     await type(textarea()!, "first");
     await press("Enter", { metaKey: true });
     expect(commentTexts()).toHaveLength(1);
-    await act(async () => host.querySelector("button")!.click()); // Open again
+    backend.state.failWith = { kind: "io", message: "cannot read the comments file" };
+    await act(async () => host.querySelector("button")!.click()); // Open another document
+    // Its comments cannot be loaded, so the panel must not still show the previous document's.
     expect(commentTexts()).toEqual([]);
+    expect(host.querySelector("aside [role=alert]")?.textContent).toContain("cannot read");
   });
 });

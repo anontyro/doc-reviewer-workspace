@@ -168,5 +168,54 @@
       "created_at": "2026-11-06T00:00:00Z",
       "updated_at": "2026-11-06T00:00:00Z"
     }
+  },
+  {
+    "name": "AnnotationFile valid",
+    "type": "AnnotationFile",
+    "value": {
+      "schema_version": "1.0.0",
+      "document_id": "doc_0123456789abcdef",
+      "path": "/Users/me/notes/plan.md",
+      "next_sequence": 3,
+      "annotations": [
+        {
+          "schema_version": "1.0.0",
+          "id": "rev_014",
+          "round_id": "rnd_001",
+          "action_type": "replace",
+          "text": "Remove the external dependency; local auth is enough.",
+          "replacement_text": "Local auth is sufficient.",
+          "anchor": {
+            "exact": "The system must use an external identity broker.",
+            "prefix": "Authentication should be straightforward.",
+            "suffix": "",
+            "heading_path": [
+              "Architecture",
+              "Authentication"
+            ],
+            "source_range": {
+              "start": 120,
+              "end": 168
+            },
+            "source_hash": "3bde25aa196f34a2b1115bf8c6191d69955672827927520142d3c2cef49f2e9e",
+            "confidence": "resolved"
+          },
+          "status": "open",
+          "created_at": "2026-11-06T00:00:00Z",
+          "updated_at": "2026-11-06T00:00:00Z"
+        }
+      ]
+    }
+  },
+  {
+    "name": "AnnotationFile valid and empty",
+    "type": "AnnotationFile",
+    "value": {
+      "schema_version": "1.0.0",
+      "document_id": "doc_0123456789abcdef",
+      "path": "/Users/me/notes/plan.md",
+      "next_sequence": 1,
+      "annotations": []
+    }
   }
 ]

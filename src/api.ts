@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import type { Annotation } from "./domain/generated/domain.schema";
 
 // shortcut: these shapes mirror the Rust structs by hand. Generate them from Rust when the command set grows (F3).
 export interface OpenedDocument {
@@ -52,3 +53,21 @@ export const openMarkdown = () => call<OpenedDocument | null>("open_markdown");
 
 export const resolveSelection = (selected: string, prefix: string, suffix: string) =>
   call<ResolvedAnchor>("resolve_selection", { selected, prefix, suffix });
+
+/** A saved comment and how it stands against the open text now (F2 spec D20). */
+export interface AnnotationView {
+  annotation: Annotation;
+  /** A fresh resolution of the stored quote. Nothing is saved from it. */
+  current: ResolvedAnchor;
+  /** The comment was made on a different version of the file. */
+  stale: boolean;
+}
+
+export const createAnnotation = (
+  c: { selected: string; prefix: string; suffix: string },
+  text: string,
+) => call<Annotation>("create_annotation", { ...c, text });
+export const listAnnotations = () => call<AnnotationView[]>("list_annotations");
+export const updateAnnotation = (id: string, text: string) =>
+  call<Annotation>("update_annotation", { id, text });
+export const deleteAnnotation = (id: string) => call<null>("delete_annotation", { id });

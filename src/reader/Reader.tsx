@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { openMarkdown, type OpenedDocument } from "../api";
+import { openMarkdown, type AnnotationView, type OpenedDocument } from "../api";
 import FloatingMenu from "../review/FloatingMenu";
 import CommentPanel from "../review/CommentPanel";
 import { findRange, paintHighlights } from "../review/highlight";
-import { useAnnotations, type Comment } from "../review/useAnnotations";
+import { useAnnotations } from "../review/useAnnotations";
 import { useSelection } from "../review/useSelection";
 import "../review/review.css";
 
@@ -14,14 +14,14 @@ export default function Reader() {
   const [locked, setLocked] = useState(false);
   const article = useRef<HTMLElement>(null);
   const { selected, restore } = useSelection(article, locked, doc);
-  const { comments, add, reset } = useAnnotations();
+  const { views, error: commentError, reload, add, edit, remove } = useAnnotations();
 
   const open = async () => {
     try {
       const opened = await openMarkdown();
       if (opened) {
         setDoc(opened); // cancelled: keep what is open
-        reset();
+        void reload();
       }
       setError(null);
     } catch (e) {
@@ -31,14 +31,19 @@ export default function Reader() {
 
   useEffect(() => {
     const root = article.current;
-    const ranges = root ? comments.flatMap((c) => findRange(root, c) ?? []) : [];
+    // Rust decides what still points somewhere. Only a quote it resolves is painted.
+    const ranges = root
+      ? views.flatMap((v) =>
+          v.current.confidence === "resolved" ? (findRange(root, v.annotation.anchor) ?? []) : [],
+        )
+      : [];
     paintHighlights(ranges);
     return () => paintHighlights([]);
-  }, [comments, doc]);
+  }, [views, doc]);
 
-  const jump = (c: Comment) => {
+  const jump = (v: AnnotationView) => {
     const root = article.current;
-    const range = root && findRange(root, c);
+    const range = root && findRange(root, v.annotation.anchor);
     if (!range) return; // no highlight for an ambiguous or missing quote; the panel still shows it
     (range.startContainer.parentElement as HTMLElement | null)?.scrollIntoView?.({
       block: "center",
@@ -62,8 +67,19 @@ export default function Reader() {
             tabIndex={-1}
             dangerouslySetInnerHTML={{ __html: doc.html }}
           />
-          <CommentPanel comments={comments} onSelect={jump} />
-          <FloatingMenu selected={selected} onLock={setLocked} onClose={restore} onSave={add} />
+          <CommentPanel
+            views={views}
+            error={commentError}
+            onSelect={jump}
+            onEdit={(id, text) => void edit(id, text)}
+            onDelete={(id) => void remove(id)}
+          />
+          <FloatingMenu
+            selected={selected}
+            onLock={setLocked}
+            onClose={restore}
+            onSave={(c, text) => void add(c, text)}
+          />
         </div>
       )}
     </section>

@@ -10,6 +10,7 @@ export const ENTITY_NAMES = [
   "Annotation",
   "ExportSnapshot",
   "LibraryEntry",
+  "AnnotationFile",
 ] as const;
 export type EntityName = (typeof ENTITY_NAMES)[number] | "ExportManifest";
 

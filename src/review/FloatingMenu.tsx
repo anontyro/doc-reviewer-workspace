@@ -16,7 +16,7 @@ interface Props {
   onLock: (locked: boolean) => void;
   /** Called when the composer or message closes, with the range to put the selection back on. */
   onClose: (range?: Range) => void;
-  onSave: (capture: Capture, resolved: ResolvedAnchor, text: string) => void;
+  onSave: (capture: Capture, text: string) => void;
 }
 
 /** The floating Comment menu and its composer (F2 spec D10 to D12). */
@@ -63,7 +63,7 @@ export default function FloatingMenu({ selected, onLock, onClose, onSave }: Prop
 
   const save = () => {
     if (state.mode !== "composer" || draft.trim() === "") return;
-    onSave(state.capture, state.resolved, draft);
+    onSave(state.capture, draft);
     close();
   };
 
