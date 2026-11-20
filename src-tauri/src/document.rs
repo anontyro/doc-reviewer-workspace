@@ -1,7 +1,11 @@
-use crate::domain::entities::{DocumentId, VersionId};
+use crate::domain::entities::{DocumentId, ProjectId, VersionId};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
-use std::{fs, path::Path, sync::Mutex};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+    sync::{Mutex, MutexGuard},
+};
 
 /// Largest file the reader opens (F2 spec D1).
 pub const MAX_BYTES: u64 = 10 * 1024 * 1024;
@@ -14,6 +18,14 @@ pub enum ErrorKind {
     TooLarge,
     Io,
     Invalid,
+    /// A name is already taken, so nothing was written (F3 spec D7, D10).
+    Exists,
+    /// The chosen folder holds no project.
+    NotProject,
+    /// A project folder or document file is no longer where it was.
+    Missing,
+    /// The file on disk changed since it was read (used by save, F3 spec D21).
+    Conflict,
 }
 
 /// The error every command returns (F2 spec D5).
@@ -44,22 +56,63 @@ pub struct OpenedDocument {
     pub html: String,
 }
 
-/// The single open document (F2 spec D2).
+/// Where the active document's comments live (F3 spec D6).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Scope {
+    QuickOpen,
+    Project {
+        id: ProjectId,
+        root: PathBuf,
+        relative_path: String,
+    },
+}
+
+/// The project the user is working in.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectContext {
+    pub id: ProjectId,
+    pub root: PathBuf,
+}
+
+struct Active {
+    doc: OpenedDocument,
+    scope: Scope,
+}
+
+/// The single active document and the current project (F2 spec D2, F3 spec D6).
 #[derive(Default)]
 pub struct AppState {
-    open: Mutex<Option<OpenedDocument>>,
+    open: Mutex<Option<Active>>,
+    project: Mutex<Option<ProjectContext>>,
+}
+
+fn unavailable() -> CommandError {
+    CommandError::new(ErrorKind::Io, "document state is unavailable")
 }
 
 impl AppState {
+    /// Makes `doc` the active document as a Quick Open file.
     pub fn set(&self, doc: OpenedDocument) -> Result<(), CommandError> {
-        *self.guard()? = Some(doc);
+        self.set_in(doc, Scope::QuickOpen)
+    }
+
+    pub fn set_in(&self, doc: OpenedDocument, scope: Scope) -> Result<(), CommandError> {
+        *self.open.lock().map_err(|_| unavailable())? = Some(Active { doc, scope });
         Ok(())
     }
 
     /// Runs `f` on the open document, or fails with `no_document`.
     pub fn with_open<T>(&self, f: impl FnOnce(&OpenedDocument) -> T) -> Result<T, CommandError> {
-        match self.guard()?.as_ref() {
-            Some(doc) => Ok(f(doc)),
+        self.with_active(|doc, _| f(doc))
+    }
+
+    /// Runs `f` on the open document and its scope, or fails with `no_document`.
+    pub fn with_active<T>(
+        &self,
+        f: impl FnOnce(&OpenedDocument, &Scope) -> T,
+    ) -> Result<T, CommandError> {
+        match self.open.lock().map_err(|_| unavailable())?.as_ref() {
+            Some(a) => Ok(f(&a.doc, &a.scope)),
             None => Err(CommandError::new(
                 ErrorKind::NoDocument,
                 "no document is open",
@@ -67,10 +120,31 @@ impl AppState {
         }
     }
 
-    fn guard(&self) -> Result<std::sync::MutexGuard<'_, Option<OpenedDocument>>, CommandError> {
-        self.open
-            .lock()
-            .map_err(|_| CommandError::new(ErrorKind::Io, "document state is unavailable"))
+    /// Switches project and closes the active document, so a document of one project is never shown in another.
+    pub fn set_project(&self, project: Option<ProjectContext>) -> Result<(), CommandError> {
+        *self.open.lock().map_err(|_| unavailable())? = None;
+        *self.project_guard()? = project;
+        Ok(())
+    }
+
+    /// The current project, or `not_project`.
+    pub fn project(&self) -> Result<ProjectContext, CommandError> {
+        self.project_guard()?
+            .clone()
+            .ok_or_else(|| CommandError::new(ErrorKind::NotProject, "no project is open"))
+    }
+
+    /// Forgets the current project if it is `id`.
+    pub fn leave_project(&self, id: &ProjectId) -> Result<(), CommandError> {
+        let is_current = self.project_guard()?.as_ref().is_some_and(|p| &p.id == id);
+        if is_current {
+            self.set_project(None)?;
+        }
+        Ok(())
+    }
+
+    fn project_guard(&self) -> Result<MutexGuard<'_, Option<ProjectContext>>, CommandError> {
+        self.project.lock().map_err(|_| unavailable())
     }
 }
 
@@ -78,7 +152,7 @@ fn hex(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
-fn sha256_hex(bytes: &[u8]) -> String {
+pub fn sha256_hex(bytes: &[u8]) -> String {
     hex(&Sha256::digest(bytes))
 }
 
@@ -88,6 +162,27 @@ fn io(e: std::io::Error) -> CommandError {
 
 /// Reads and renders a file. Never writes to it (AT-02).
 pub fn open_path(path: &Path) -> Result<OpenedDocument, CommandError> {
+    open_with(path, |canonical| sha256_hex(canonical.as_bytes()))
+}
+
+/// Opens a document of a project. Its id comes from the project id and file name, so it survives moving the
+/// project folder (F3 spec D9). `relative_path` must already be validated by `project::paths`.
+pub fn open_in_project(
+    root: &Path,
+    project: &ProjectId,
+    relative_path: &str,
+) -> Result<OpenedDocument, CommandError> {
+    let path = crate::project::paths::resolve_in_root(root, relative_path)?;
+    let project = String::from(project.clone());
+    open_with(&path, |_| {
+        sha256_hex(format!("{project}/{relative_path}").as_bytes())
+    })
+}
+
+fn open_with(
+    path: &Path,
+    id_source_hash: impl FnOnce(&str) -> String,
+) -> Result<OpenedDocument, CommandError> {
     let path = fs::canonicalize(path).map_err(io)?;
     if fs::metadata(&path).map_err(io)?.len() > MAX_BYTES {
         return Err(CommandError::new(
@@ -106,11 +201,8 @@ pub fn open_path(path: &Path) -> Result<OpenedDocument, CommandError> {
             .file_name()
             .map(|n| n.to_string_lossy().into_owned())
             .unwrap_or_default(),
-        document_id: DocumentId::try_from(format!(
-            "doc_{}",
-            &sha256_hex(path_str.as_bytes())[..16]
-        ))
-        .map_err(invalid)?,
+        document_id: DocumentId::try_from(format!("doc_{}", &id_source_hash(&path_str)[..16]))
+            .map_err(invalid)?,
         version_id: VersionId::try_from(format!("ver_{}", &source_hash[..16])).map_err(invalid)?,
         html: crate::markdown::render_markdown(&source),
         path: path_str,

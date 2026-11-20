@@ -1,14 +1,18 @@
-use super::atomic::write_atomic;
-use crate::document::{CommandError, ErrorKind, OpenedDocument};
+use super::atomic::{read_versioned_json, write_atomic};
+use crate::document::{CommandError, ErrorKind, OpenedDocument, Scope};
 use crate::domain::anchor::{Anchor, AnchorConfidence};
 use crate::domain::entities::{
     Annotation, AnnotationAction, AnnotationId, AnnotationStatus, RoundId,
 };
-use crate::domain::schema_version::{check_schema_version, CURRENT_SCHEMA_VERSION};
+use crate::domain::schema_version::CURRENT_SCHEMA_VERSION;
 use crate::domain::store::AnnotationFile;
 use crate::markdown::{resolve_anchor, ResolvedAnchor};
 use serde::Serialize;
-use std::{fs, io::ErrorKind as IoKind, path::PathBuf, sync::Mutex};
+use std::{
+    fs,
+    path::PathBuf,
+    sync::{Arc, Mutex},
+};
 use time::{format_description::well_known::Rfc3339, OffsetDateTime};
 
 /// An annotation plus how it stands against the open text now (F2 spec D20).
@@ -44,7 +48,8 @@ pub fn now_rfc3339() -> String {
 pub struct Store {
     dir: PathBuf,
     // One writer at a time, so two commands cannot read the same file and lose one another's change.
-    lock: Mutex<()>,
+    // Shared by every store made with `for_scope`, so the app has one lock whichever folder is written.
+    lock: Arc<Mutex<()>>,
 }
 
 fn io(msg: impl std::fmt::Display) -> CommandError {
@@ -59,7 +64,20 @@ impl Store {
     pub fn new(dir: PathBuf) -> Self {
         Self {
             dir,
-            lock: Mutex::new(()),
+            lock: Arc::new(Mutex::new(())),
+        }
+    }
+
+    /// The store that holds comments for a document in `scope`: this one for Quick Open, the project's own
+    /// `.review-workspace/annotations/` for a project document (F3 spec D6). It shares this store's write lock.
+    pub fn for_scope(&self, scope: &Scope) -> Store {
+        let dir = match scope {
+            Scope::QuickOpen => self.dir.clone(),
+            Scope::Project { root, .. } => root.join(".review-workspace").join("annotations"),
+        };
+        Store {
+            dir,
+            lock: self.lock.clone(),
         }
     }
 
@@ -75,37 +93,20 @@ impl Store {
     /// and is never overwritten (F2 spec D16).
     fn load(&self, doc: &OpenedDocument) -> Result<AnnotationFile, CommandError> {
         let path = self.file_path(doc);
-        let bytes = match fs::read(&path) {
-            Ok(b) => b,
-            Err(e) if e.kind() == IoKind::NotFound => {
-                return Ok(AnnotationFile {
-                    schema_version: CURRENT_SCHEMA_VERSION.to_string(),
-                    document_id: doc.document_id.clone(),
-                    path: doc.path.clone(),
-                    next_sequence: 1,
-                    annotations: vec![],
-                })
-            }
-            Err(e) => return Err(io(format!("cannot read the comments file: {e}"))),
+        let Some(file) = read_versioned_json::<AnnotationFile>(&path, "comments file")? else {
+            return Ok(AnnotationFile {
+                schema_version: CURRENT_SCHEMA_VERSION.to_string(),
+                document_id: doc.document_id.clone(),
+                path: doc.path.clone(),
+                next_sequence: 1,
+                annotations: vec![],
+            });
         };
-        let unreadable = |why: String| {
-            io(format!(
-                "the comments file {} is unusable: {why}",
-                path.display()
-            ))
-        };
-        // Check the version on its own first, so a newer file is refused even if its shape has changed.
-        let raw: serde_json::Value =
-            serde_json::from_slice(&bytes).map_err(|e| unreadable(e.to_string()))?;
-        let version = raw
-            .get("schema_version")
-            .and_then(|v| v.as_str())
-            .ok_or_else(|| unreadable("no schema_version".into()))?;
-        check_schema_version(version).map_err(|e| unreadable(format!("{e:?}")))?;
-        let file: AnnotationFile =
-            serde_json::from_value(raw).map_err(|e| unreadable(e.to_string()))?;
         if file.document_id != doc.document_id {
-            return Err(unreadable("it belongs to a different document".into()));
+            return Err(io(format!(
+                "the comments file {} is unusable: it belongs to a different document",
+                path.display()
+            )));
         }
         Ok(file)
     }
