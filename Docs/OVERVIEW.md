@@ -3,7 +3,7 @@
 The index between the PRD and the feature specs. Read this first. For product intent read
 [the PRD](llm_review_workspace_prd.md); for what is being built right now, follow the spec link in the feature table.
 
-**Baseline:** PRD 1.0 (2026-11-06). **Updated:** 2026-11-13.
+**Baseline:** PRD 1.0 (2026-11-06). **Updated:** 2026-11-20.
 **Rule:** the PRD is a controlled baseline. If a spec finds a conflicting assumption, record it in that feature's
 `Decisions/` and add a revision note to the PRD. Do not edit requirements silently (PRD §17).
 
@@ -26,7 +26,7 @@ gate passes, because earlier spike results change their shape.
 
 | # | Feature folder | Milestone | PRD tasks | Exit gate (PRD) | Spec | Status |
 |---|---|---|---|---|---|---|
-| F1 | `FoundationSpike` | M0 | T-001, T-002, T-003 | Key risks understood or mitigated (§12.2) | [F1 spec](FoundationSpike/Specs/2026-11-13-F1-foundation-spike.md) | Approved |
+| F1 | `FoundationSpike` | M0 | T-001, T-002, T-003 | Key risks understood or mitigated (§12.2) | [F1 spec](FoundationSpike/Specs/2026-11-13-F1-foundation-spike.md) | Built, awaiting manual test and audit |
 | F2 | `MarkdownPrototype` | M1 | T-004, T-005, T-006, T-007 | Real LLM handoff works; no comments lost on restart (§5.1) | not written | Blocked on F1 |
 | F3 | `ProjectsAndPersistence` | M2 → v0.1 alpha | T-008, T-009, T-010, T-016 | Review resumes after restart; real project managed safely (§5.2) | not written | Blocked on F2 |
 | F4 | `ExportAndVersions` | M3 → v0.1.0 | T-011, T-012, T-013, T-014, T-015 | One reliable two-version LLM cycle; no data loss (§5.3) | not written | Blocked on F3 |

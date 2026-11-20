@@ -9,7 +9,7 @@ Work item: F1 (PRD milestone M0). Releases map to these tasks:
 | R3 · Source-map spike | T-003 |
 
 Branch: `feature/F1-foundation-spike`.
-Status: **approved 2026-11-13**.
+Status: **completed 2026-11-20**.
 Manual testing: `Docs/FoundationSpike/Testing/MANUAL-TESTING-F1-foundation-spike.md`.
 Decisions: `Docs/FoundationSpike/Decisions/` (README lists every planned record and the package that writes it).
 
@@ -331,3 +331,56 @@ Shared acceptance for every package:
 ## Open questions
 
 None.
+
+## Completion
+
+- Completed: 2026-11-20
+- Range: `053a1cc..6ce2b9b`
+- Rating: 4/5 (user)
+- Packages: 8/8 done
+- Acceptance criteria: 36/40 verified
+- Deviations: 9
+- Files outside ownedFiles: 10
+- Owned files untouched: 1
+
+### Summary
+
+The repo is a Tauri 2 + React/TypeScript shell with Rust-canonical domain types, generated JSON Schema and TS types, and a
+two-engine Markdown source-map spike. Both engines pass all 28 shared cases, so Rust (comrak) is chosen by the D17
+tie-break (decisions 0004 and 0005). Web checks (41 tests) and Rust fmt, clippy and tests (15 + 1 + 3) pass.
+
+### Changes by package
+
+| Package | Status | Notes |
+|---|---|---|
+| P1 | done | Web scaffold and check scripts pass. Not verified from a clean checkout. |
+| P2 | done | Tauri crate, minimal capabilities, decision 0001. The offline launch of the debug `.app` was not run. |
+| P3 | done | Domain types, schemas, drift test, schema-version check. |
+| P4 | done | Generated TS types, ajv validation, 9 valid and 18 invalid cases, decisions 0002-0003. |
+| P5 | done | 10 fixtures and 28 cases with a self-checking test. |
+| P7 | done | Engine B passes 28/28. Mutation of the end offset drops it to 5/28. Debug-only commands, release clippy clean. |
+| P6 | done | Engine A passes 28/28 on jsdom ranges. Production bundle has no SpikeView. The view was not opened by hand. |
+| P8 | done | Report and decisions 0004-0005. WKWebView results are recorded as not run. |
+
+### Deviations
+
+- **P4 · generated types layout.** Spec: one `src/domain/generated.ts`. Built: two `.d.ts` files in `src/domain/generated/`. Why: both schemas define shared types, so one file would declare them twice. Decision 0002 records it.
+- **P4 · criterion 4.** Spec: one shared sample file. Built: the Rust sample manifest copied into `fixtures/domain/valid.json`.
+- **P3 · tests.** Spec: no test file listed for round trips. Built: round-trip tests inside the module files.
+- **P5, P4 · `tsconfig.json`.** P1 owns it. P5 and P4 edited it (`types`, `resolveJsonModule`, `include`), and P4 also edited `eslint.config.js` and `package.json`.
+- **P6 · dependencies.** Spec listed seven. Built: also `@tauri-apps/api`, `@types/mdast`, `@types/hast`, `@types/jsdom`, for the Rust call from the view and for typing.
+- **D15 / P7 · sanitiser.** Spec implied a sanitised render. Built: comrak safe mode only, no sanitiser crate on the Rust side. Decision 0004 records it.
+- **D11 · free text.** `origin`, `state`, export `format` and timestamps are unvalidated strings (`shortcut:` comment in the code).
+- **D13 · `data-sourcepos` units.** The same format, but remark counts UTF-16 columns and comrak counts bytes.
+- **Outside ownedFiles (10).** `.prettierrc` and `src-tauri/icons/*` (6 placeholder icons Tauri needs), the manual testing doc (written with the spec), and the two generated `.d.ts` files.
+
+### Follow-ups
+
+- Run the manual testing doc in WKWebView with the network off, and paste the results into the report (not tracked elsewhere).
+- F2: delete engine A per the report, promote `src-tauri/src/spike/`, refine entity and escape text mapping, and add real LLM documents as fixtures.
+- Decision 0005 says Rust refuses a selection that splits a multi-byte character. No test covers it yet.
+- Pre-PR audit (`ponytail:ponytail-review`) is still to do.
+
+### Rating notes
+
+The spec's lanes, waves and acceptance criteria held up. It missed the generated-file layout, the extra tooling config edits and the icons Tauri requires, and it left the CRLF and nested-list details to the build.
