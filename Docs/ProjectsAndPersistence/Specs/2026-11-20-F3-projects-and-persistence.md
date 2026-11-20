@@ -12,7 +12,7 @@ Work item: F3 (PRD milestone M2, personal alpha). Releases map to these tasks:
 
 Branch: none. Work on `main` until CLAUDE.md says otherwise.
 Design: mockups cited by path, not copied: `Docs/01_project_library.png` (home), `Docs/02_markdown_review.png` (workspace layout).
-Status: **approved 2026-11-20**.
+Status: **completed 2026-11-20**.
 Manual testing: `Docs/ProjectsAndPersistence/Testing/MANUAL-TESTING-F3-projects-and-persistence.md`.
 Decisions: `Docs/ProjectsAndPersistence/Decisions/` (README lists every planned record and the package that writes it).
 
@@ -477,3 +477,63 @@ Shared acceptance for every package:
 - **Duplicate names → D7.** Refuse and ask for another name.
 - **Editor → D17.** CodeMirror 6.
 - **Quick Open without a project → D6.** Comments stay in app data. No promotion.
+
+## Completion
+
+- Completed: 2026-11-20
+- Range: `4ef3999..e21357a`
+- Rating: 4/5 (user)
+- Packages: 7/8 done
+- Acceptance criteria: 56/57 verified
+- Deviations: 15
+- Files outside ownedFiles: 6
+- Owned files untouched: 5
+
+### Summary
+
+You can now create or open a project folder, keep a library of projects, work in a workspace with an explorer, tabs and collapsible sidebars, and edit the Markdown source in CodeMirror with a safe save. A file changed on disk is detected on focus and before every save, a backup is taken before each overwrite, unsaved text is kept as a draft, and a conflict dialog offers Keep editing, Load disk version or a confirmed Overwrite. Rust gained the project service, scoped comment stores, `save_document`, `check_document`, `backup_text` and the draft commands. A pre-PR audit found 6 items, all fixed in e21357a.
+
+Lane checks at e21357a: web 194 tests, lint, typecheck and format clean; Playwright 62 runs (Chromium and WebKit); Rust fmt, clippy `-D warnings` and the full `cargo test` suite pass. The manual checklist has not been run yet.
+
+### Changes by package
+
+| Package | Status | Notes |
+|---|---|---|
+| P1 | done | Project, library and draft types with schemas and fixtures. `validate.test.ts` was not touched. |
+| P2 | done | Project service, library, safe add, scoped comment stores, decisions 0001 and 0002. |
+| P3 | done | Typed project API, home screen, both fakes, Playwright home flows. |
+| P4 | done | Workspace, explorer, tabs, sidebars, Reader takes its document. Decision 0003. |
+| P5 | done | `save_document` with fingerprint check, atomic write, permissions kept. |
+| P6 | partial | Editor, toggle and save work and pass in both engines. Criterion 8 (the editor under the new CSP) is only covered by the pinned CSP string test. Playwright does not enforce the CSP, so styling in the real app is unverified. |
+| P7 | done | Change check, backups, atomic drafts, temp cleanup. Decision 0005. |
+| P8 | done | Change banner, conflict dialog, draft recovery. Decision 0006. `Decisions/README.md` was already complete, so not touched. |
+
+### Deviations
+
+- **P1 · Newer-major fixtures.** Spec: fixture cases checked by both languages. Built: the "newer major" cases are Rust-only. Why: the JSON schema cannot compare versions.
+- **P2 · Shared atomic helpers.** Spec: new store code only. Built: added `read_versioned_json` and `write_new` in `store/atomic.rs`, moved the F2 annotation store onto them, and added `Store::for_scope` with a shared `Arc` lock. Why: avoid two copies of the same file handling.
+- **P2 · Rename and Conflict.** Spec: not stated. Built: `rename_project` returns `ProjectView`, and `ErrorKind::Conflict` stayed unused until R3. Why: the UI needs the new view, and conflict only exists once saving does.
+- **P3 · Unowned test edits.** Spec: P3 owns its files only. Built: edited `e2e/review.spec.ts`, and put the error-kind test in `App.test.tsx`. Why: Quick open now opens the dialog itself.
+- **P3 / D21 · Permission restore.** Spec: save keeps permissions. Built: `save_text` restores them after the rename, with a `shortcut:` comment, and `document.rs` got a shared `read_document`. Why: the rename replaces the file's mode.
+- **P4 · Unowned files.** Spec: listed files only. Built: also edited `App.test.tsx`, `review.test.tsx`, `export.test.tsx`, `persistence.test.tsx`, `Home.test.tsx`, `useAnnotations.ts` and `Home.tsx`; three Reader Open-button tests moved to the Home tests; the toggle label is "Hide review panel". Why: Reader no longer owns opening a file, and a Playwright label clashed.
+- **P6 · Back to projects.** Spec: asks only on unsaved edits in the discarding path. Built: it also asks when any tab has unsaved edits. Why: it would otherwise drop them silently.
+- **D18 / P6 · CSP.** Spec: try a nonce route first. Built: went straight to `style-src 'self' 'unsafe-inline'`, pinned by an exact-string test. Why: a nonce route was not tried in the real app. The decision says so.
+- **P6 · Undo history.** Spec: not stated. Built: undo history resets on view toggle or tab re-activation. Why: each activation re-reads the file.
+- **P7 · `save` signature.** Spec: P5's `AppState::save`. Built: it takes `&Backups` and `now`, so the P5 tests changed (an `Env` helper). Why: backup must happen inside the save.
+- **P7 · Newest backup.** Spec: prune to the newest 20. Built: "newest" is arbitrary within one second (file names have one-second resolution). Why: accepted for a single-user app.
+- **P8 · `backup_text`.** Spec: not in P8's files. Built: a Rust `backup_text` command in `commands.rs`, `document.rs`, `lib.rs`, plus the web wrappers and fakes. Why: Load disk version must back up the text first (D25).
+- **P8 · Quick Open.** Spec: same conflict options. Built: Quick Open has no Reload or Load-disk-version. Why: it has one document and no project to reload from.
+- **P8 · Draft timing.** Spec: drafts follow typing. Built: no draft is written if the user switches tabs within 2 seconds of typing. Why: the timer is cancelled on switch.
+- **Audit · Draft command shape.** Spec: `save_draft(text, base_hash)`. Built: the draft commands take a `document_id` and Rust refuses a mismatch with `invalid`. Why: a draft could land on the wrong document after a tab switch. `api.ts`, both fakes and Rust were updated.
+
+### Follow-ups
+
+- Run `MANUAL-TESTING-F3-projects-and-persistence.md` in the real app. It covers the CSP and CodeMirror styling, Tauri's camelCase argument mapping, window layout and shortcuts.
+- Temp files left in the project root by a crash are never cleaned (D28). Revisit when F4 adds `versions/`.
+- The production bundle warns about a chunk over 500 kB. Left alone.
+- Two app instances can still overwrite each other's comment changes (F2 decision 0003).
+- Highlight performance with many comments on a large file is unmeasured (T-020).
+
+### Rating notes
+
+The user rated it 4 of 5 with no reason given. The spec's decisions and wave split held. The deviations cluster around the CSP choice, the unowned test files that the Reader change touched, and the draft command shape, which only the audit exposed.
