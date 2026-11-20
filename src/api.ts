@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { Annotation } from "./domain/generated/domain.schema";
+import type { Annotation, DraftFile } from "./domain/generated/domain.schema";
 
 // shortcut: these shapes mirror the Rust structs by hand. Generate them from Rust if they drift.
 export interface OpenedDocument {
@@ -99,6 +99,18 @@ export const openProjectDocument = (relativePath: string) =>
 /** Saves text over the active file, or rejects with `conflict` if the file changed since `expectedHash` (F3 spec D21). */
 export const saveDocument = (text: string, expectedHash: string) =>
   call<OpenedDocument>("save_document", { text, expectedHash });
+
+/** What is on disk compared with what the app read (F3 spec D24). */
+export type DocStatus =
+  { status: "unchanged" } | { status: "changed"; disk_hash: string } | { status: "missing" };
+
+export const checkDocument = () => call<DocStatus>("check_document");
+/** Keeps the user's unsaved text as a backup, before they load the disk version (F3 spec D25). */
+export const backupText = (text: string) => call<null>("backup_text", { text });
+export const saveDraft = (text: string, baseHash: string) =>
+  call<null>("save_draft", { text, baseHash });
+export const readDraft = () => call<DraftFile | null>("read_draft");
+export const clearDraft = () => call<null>("clear_draft");
 
 /** Shows the native dialog. Resolves to null when the user cancels. */
 export const openMarkdown = () => call<OpenedDocument | null>("open_markdown");

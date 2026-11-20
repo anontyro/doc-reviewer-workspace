@@ -52,22 +52,31 @@ export async function installFakeTauri(
         "notes.md": "# Notes\n",
       };
       const hashes: Record<string, string> = {};
+      const loaded: Record<string, string> = {}; // the hash Rust read last, per document
+      const drafts: Record<string, { text: string; base_hash: string }> = {};
+      const gone = new Set<string>();
       let saves = 0;
       const hash = (name: string) => hashes[name] ?? "0".repeat(64);
-      const opened = (name: string) => ({
-        path: `/tmp/${name}`,
-        name,
-        document_id: `doc_${name.length.toString(16).padStart(16, "0")}`,
-        version_id: "ver_0123456789abcdef",
-        source_hash: hash(name),
-        source: sources[name],
-        html: pages[name],
-      });
+      const opened = (name: string) => (
+        (loaded[name] = hash(name)),
+        {
+          path: `/tmp/${name}`,
+          name,
+          document_id: `doc_${name.length.toString(16).padStart(16, "0")}`,
+          version_id: "ver_0123456789abcdef",
+          source_hash: hash(name),
+          source: sources[name],
+          html: pages[name],
+        }
+      );
       const w = window as unknown as Record<string, unknown>;
       // Every command the app sends, so a test can check what was and was not called.
       const calls: { cmd: string; args: unknown }[] = [];
       w.__calls = calls;
       w.__externalEdit = () => (hashes[active] = "e".repeat(64));
+      w.__deleteFile = () => gone.add(active);
+      w.__setDraft = (name: string, text: string, base: string) =>
+        (drafts[name] = { text, base_hash: base });
       let items = library as FakeProject[];
       const view = (i: FakeProject) => ({
         id: i.project_id,
@@ -105,6 +114,30 @@ export async function installFakeTauri(
             if (!(args.relativePath in pages)) throw { kind: "invalid", message: "not a document" };
             active = args.relativePath;
             return opened(active);
+          }
+          if (cmd === "check_document") {
+            if (gone.has(active)) return { status: "missing" };
+            return hash(active) === loaded[active]
+              ? { status: "unchanged" }
+              : { status: "changed", disk_hash: hash(active) };
+          }
+          if (cmd === "backup_text") return null;
+          if (cmd === "save_draft") {
+            drafts[active] = { text: args.text, base_hash: args.baseHash };
+            return null;
+          }
+          if (cmd === "read_draft")
+            return drafts[active]
+              ? {
+                  schema_version: "1.0.0",
+                  document_id: opened(active).document_id,
+                  saved_at: "2026-11-20T10:00:00Z",
+                  ...drafts[active],
+                }
+              : null;
+          if (cmd === "clear_draft") {
+            delete drafts[active];
+            return null;
           }
           if (cmd === "save_document") {
             if (args.expectedHash !== hash(active))

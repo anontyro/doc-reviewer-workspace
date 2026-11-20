@@ -132,6 +132,28 @@ impl AppState {
         self.with_active(|doc, _| f(doc))
     }
 
+    /// Keeps `text` (the user's unsaved edit) as a backup of the active document, so it can be found by hand later.
+    /// Writes nothing else. Used before the user chooses to load the disk version instead (F3 spec D25).
+    pub fn backup_text(
+        &self,
+        text: &str,
+        backups: &Backups,
+        now: &str,
+    ) -> Result<(), CommandError> {
+        if text.len() as u64 > MAX_BYTES {
+            return Err(CommandError::new(
+                ErrorKind::TooLarge,
+                "text is larger than 10 MiB",
+            ));
+        }
+        self.with_active(|doc, scope| {
+            let dir = backups.dir(scope, &doc.document_id);
+            backup::write_backup(&dir, text.as_bytes(), now)?;
+            backup::prune(&dir, backup::KEEP);
+            Ok(())
+        })?
+    }
+
     /// Compares the active document's file on disk with what was read (F3 spec D24).
     pub fn check(&self) -> Result<DocStatus, CommandError> {
         self.with_open(check_text)?

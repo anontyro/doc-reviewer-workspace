@@ -131,12 +131,9 @@ describe("save", () => {
     await mount();
     await openSource();
     await edit({ from: 0, insert: "mine " });
-    backend.state.saveFails = {
-      kind: "conflict",
-      message: "the file changed on disk since it was opened",
-    };
+    backend.state.saveFails = { kind: "io", message: "could not save: the disk is full" };
     await press({ key: "s", ctrlKey: true });
-    expect(host.querySelector('[role="alert"]')!.textContent).toContain("changed on disk");
+    expect(host.querySelector('[role="alert"]')!.textContent).toContain("disk is full");
     expect(dirtyMarker()).not.toBeNull();
     expect(view().state.sliceDoc()).toBe("mine # Plan\n\nAlpha beta.\n");
   });

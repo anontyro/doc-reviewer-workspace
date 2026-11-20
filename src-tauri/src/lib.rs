@@ -38,6 +38,7 @@ pub fn run() {
             commands::open_project_document,
             commands::save_document,
             commands::check_document,
+            commands::backup_text,
             commands::save_draft,
             commands::read_draft,
             commands::clear_draft,

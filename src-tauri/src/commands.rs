@@ -50,6 +50,16 @@ pub fn save_document(
     state.save(&text, &expected_hash, &backups, &now_rfc3339())
 }
 
+/// Keeps the user's unsaved text as a backup before they load the disk version (F3 spec D25).
+#[tauri::command]
+pub fn backup_text(
+    state: State<'_, AppState>,
+    backups: State<'_, Backups>,
+    text: String,
+) -> Result<(), CommandError> {
+    state.backup_text(&text, &backups, &now_rfc3339())
+}
+
 /// Whether the active file still has the bytes that were read (F3 spec D24). Called on window focus and before a save.
 #[tauri::command]
 pub fn check_document(state: State<'_, AppState>) -> Result<DocStatus, CommandError> {

@@ -56,13 +56,13 @@ test("toggling makes no save", async ({ page }) => {
   expect(await calls(page, "save_document")).toHaveLength(0);
 });
 
-test("a save refused because the file changed shows the error and keeps the text", async ({
+test("a save refused because the file changed opens the conflict dialog and keeps the text", async ({
   page,
 }) => {
   await type(page, "My edit.");
   await page.evaluate(() => (window as unknown as { __externalEdit: () => void }).__externalEdit());
   await page.keyboard.press("ControlOrMeta+s");
-  await expect(page.getByRole("alert")).toContainText("changed on disk");
+  await expect(page.getByRole("alertdialog", { name: "File changed on disk" })).toBeVisible();
   await expect(page.getByRole("img", { name: "unsaved changes" })).toBeVisible();
   await expect(page.locator(".cm-content")).toContainText("My edit.");
 });

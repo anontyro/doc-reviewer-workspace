@@ -1,5 +1,7 @@
+import type { DraftFile } from "../domain/generated/domain.schema";
 import type {
   AnnotationView,
+  DocStatus,
   LibraryItem,
   OpenedDocument,
   ProjectView,
@@ -32,6 +34,10 @@ export function fakeBackend(doc: OpenedDocument) {
     parked: {} as Record<string, AnnotationView[]>,
     active: "",
     /** When set, `save_document` rejects with it, as for a file that changed on disk. */
+    /** What `check_document` answers. */
+    status: { status: "unchanged" } as DocStatus,
+    /** The draft `read_draft` answers, and what `save_draft` last stored. */
+    draft: null as DraftFile | null,
     saveFails: null as { kind: string; message: string } | null,
   };
 
@@ -66,6 +72,24 @@ export function fakeBackend(doc: OpenedDocument) {
         state.views = state.parked[a.relativePath] ?? [];
         return state.docs[a.relativePath] ?? doc;
       }
+      case "check_document":
+        return state.status;
+      case "backup_text":
+        return null;
+      case "save_draft":
+        state.draft = {
+          schema_version: "1.0.0",
+          document_id: "doc_0123456789abcdef",
+          base_hash: a.baseHash,
+          text: a.text,
+          saved_at: "2026-11-20T10:00:00Z",
+        };
+        return null;
+      case "read_draft":
+        return state.draft;
+      case "clear_draft":
+        state.draft = null;
+        return null;
       case "save_document": {
         if (state.saveFails) throw state.saveFails;
         const saved = state.docs[state.active] ?? doc;

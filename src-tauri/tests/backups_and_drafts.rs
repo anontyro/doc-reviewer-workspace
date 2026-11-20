@@ -419,3 +419,30 @@ fn opening_a_project_deletes_leftover_temp_files_inside_review_workspace_only() 
     projects.open_at(&view.id, NOW).unwrap();
     assert!(!inside[0].exists());
 }
+
+#[test]
+fn unsaved_text_can_be_kept_as_a_backup_without_touching_the_file() {
+    let e = project_env("bk-text", b"# Disk\n");
+    e.state
+        .backup_text("# My unsaved text\r\n", &e.backups, NOW)
+        .unwrap();
+    let names = e.backup_names();
+    assert_eq!(names.len(), 1);
+    assert_eq!(
+        fs::read(e.backup_dir().join(&names[0])).unwrap(),
+        b"# My unsaved text\r\n"
+    );
+    assert_eq!(fs::read(e.root.0.join("doc.md")).unwrap(), b"# Disk\n");
+    // Nothing is open: refused.
+    let none = AppState::default();
+    assert_eq!(
+        none.backup_text("x", &e.backups, NOW).unwrap_err().kind,
+        ErrorKind::NoDocument
+    );
+    // Too big: refused.
+    let big = "a".repeat(10 * 1024 * 1024 + 1);
+    assert_eq!(
+        e.state.backup_text(&big, &e.backups, NOW).unwrap_err().kind,
+        ErrorKind::TooLarge
+    );
+}

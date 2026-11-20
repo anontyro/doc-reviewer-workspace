@@ -1,22 +1,36 @@
 import { useEffect, useRef, useState } from "react";
 import {
   addDocument,
+  backupText,
+  checkDocument,
+  clearDraft,
+  CommandError,
   openProjectDocument,
+  readDraft,
   saveDocument,
+  saveDraft,
+  type DocStatus,
   type OpenedDocument,
   type ProjectView,
 } from "../api";
+import type { DraftFile } from "../domain/generated/domain.schema";
 import SourceEditor from "../editor/SourceEditor";
 import Reader from "../reader/Reader";
 import { message } from "../project/useLibrary";
 import Explorer, { visible } from "./Explorer";
 import Tabs from "./Tabs";
+import Conflict from "./Conflict";
+import Recovery from "./Recovery";
+import { useChangeCheck } from "./useChangeCheck";
 import { neighbour, useTabs } from "./useTabs";
 import "./workspace.css";
 
 type Props = { onHome: () => void } & (
   { project: ProjectView; quickDoc?: undefined } | { project?: undefined; quickDoc: OpenedDocument }
 );
+
+/** Wait this long after the last keystroke before the unsaved text is written to a draft (F3 spec D27). */
+const DRAFT_DELAY_MS = 2000;
 
 const SAVE_FIRST = "Save first: comments attach to the saved text";
 
@@ -38,9 +52,17 @@ export default function Workspace({ project, quickDoc, onHome }: Props) {
   const [right, setRight] = useState(true);
   const [sidebar, setSidebar] = useState<HTMLElement | null>(null);
   // Asks before unsaved text is thrown away: closing a tab, or leaving the project.
-  const [discarding, setDiscarding] = useState<{ what: string; run: () => void } | null>(null);
+  const [discarding, setDiscarding] = useState<{
+    what: string;
+    run: () => void | Promise<void>;
+  } | null>(null);
+  // What the active file looks like on disk now, when it is not what was read (F3 spec D24).
+  const [disk, setDisk] = useState<Exclude<DocStatus, { status: "unchanged" }> | null>(null);
+  const [conflict, setConflict] = useState<{ diskHash: string } | null>(null);
+  const [recover, setRecover] = useState<{ n: number; draft: DraftFile } | null>(null);
   const { tabs, edits, modes, add, remove, setEdit, setMode } = useTabs();
   const latest = useRef(0); // the newest activation, so a slow answer for an earlier click is dropped
+  const dismissed = useRef<string | null>(null); // a disk version the user chose to keep editing past
 
   useEffect(() => {
     // Cmd+\ toggles the explorer, Cmd+Shift+\ the right sidebar.
@@ -57,6 +79,54 @@ export default function Workspace({ project, quickDoc, onHome }: Props) {
   const edit = edits[key];
   const mode = modes[key] ?? "rendered";
 
+  // While the text is unsaved it is written to a draft shortly after the last keystroke, and never while it is saved.
+  const draftText = edit?.text;
+  const draftBase = edit?.base;
+  useEffect(() => {
+    if (draftText === undefined || draftBase === undefined) return;
+    const timer = setTimeout(() => {
+      saveDraft(draftText, draftBase).catch((e) => setError(message(e)));
+    }, DRAFT_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [draftText, draftBase, key]);
+
+  // A Quick Open file is already active, so look for its draft once.
+  useEffect(() => {
+    if (!quickDoc) return;
+    let live = true;
+    readDraft().then(
+      (d) => live && d && d.text !== quickDoc.source && setRecover({ n: 0, draft: d }),
+      (e) => live && setError(message(e)),
+    );
+    return () => {
+      live = false;
+    };
+  }, [quickDoc]);
+
+  /** `asked` is true when the user tried to save, which always shows the dialog even past a Keep editing. */
+  const openConflict = (s: DocStatus, asked: boolean) => {
+    if (s.status === "missing") return setDisk(s);
+    // The file differs from the text this edit started from, so the dialog's Overwrite expects this hash.
+    const diskHash = s.status === "changed" ? s.disk_hash : (current?.doc.source_hash ?? "");
+    if (!asked && dismissed.current === diskHash) return;
+    setConflict({ diskHash });
+  };
+
+  /** Asks Rust whether the active file still has the bytes that were read. */
+  const runCheck = async () => {
+    if (!current) return;
+    try {
+      const s = await checkDocument();
+      if (current.n !== latest.current) return; // another document is active now
+      if (s.status === "unchanged") return setDisk(null);
+      setDisk(s);
+      if (s.status === "changed" && edit) openConflict(s, false);
+    } catch {
+      // A failed check changes nothing. The save will report any real problem.
+    }
+  };
+  useChangeCheck(() => void runCheck());
+
   const activate = async (path: string) => {
     const mine = ++latest.current;
     try {
@@ -64,9 +134,44 @@ export default function Workspace({ project, quickDoc, onHome }: Props) {
       if (mine !== latest.current) return;
       add(path);
       setCurrent({ path, doc, n: mine });
+      setDisk(null);
+      setConflict(null);
+      setRecover(null);
+      dismissed.current = null;
       setError(null);
+      await offerDraft(doc, path, mine);
     } catch (e) {
       if (mine === latest.current) setError(message(e));
+    }
+  };
+
+  /** Looks for unsaved text left by an earlier session. A tab that already has unsaved text in memory keeps that. */
+  const offerDraft = async (doc: OpenedDocument, path: string, n: number) => {
+    try {
+      const draft = await readDraft();
+      if (n !== latest.current || !draft || edits[path]) return;
+      if (draft.text === doc.source)
+        await clearDraft(); // nothing to restore
+      else setRecover({ n, draft });
+    } catch (e) {
+      if (n === latest.current) setError(message(e)); // a draft that cannot be read stays where it is
+    }
+  };
+
+  /** Deletes the drafts of these tabs. Rust holds one active document, so other tabs are made active first. */
+  const dropDrafts = async (paths: string[], backToCurrent: boolean) => {
+    try {
+      let moved = false;
+      for (const p of paths) {
+        if (p !== key) {
+          await openProjectDocument(p);
+          moved = true;
+        }
+        await clearDraft();
+      }
+      if (moved && backToCurrent && current?.path) await activate(current.path);
+    } catch (e) {
+      setError(message(e));
     }
   };
 
@@ -83,11 +188,25 @@ export default function Workspace({ project, quickDoc, onHome }: Props) {
 
   const close = (path: string) =>
     edits[path]
-      ? setDiscarding({ what: names.get(path) ?? path, run: () => closeTab(path) })
+      ? setDiscarding({
+          what: names.get(path) ?? path,
+          run: async () => {
+            await dropDrafts([path], true);
+            closeTab(path);
+          },
+        })
       : closeTab(path);
 
   const leave = () =>
-    Object.keys(edits).length > 0 ? setDiscarding({ what: "your project", run: onHome }) : onHome();
+    Object.keys(edits).length > 0
+      ? setDiscarding({
+          what: "your project",
+          run: async () => {
+            await dropDrafts(Object.keys(edits), false);
+            onHome();
+          },
+        })
+      : onHome();
 
   const addToProject = async () => {
     try {
@@ -99,14 +218,84 @@ export default function Workspace({ project, quickDoc, onHome }: Props) {
     }
   };
 
-  /** Saves the active tab's text. On any error the text and the unsaved marker stay (F3 spec D23). */
-  const save = async () => {
-    if (!current || !edit) return;
+  /** The save is done: the text is the file, so the unsaved marker, the draft and any dialog go away. */
+  const saved = async (doc: OpenedDocument) => {
+    setEdit(key, null);
+    setCurrent((c) => (c && c.path === current?.path ? { ...c, doc } : c));
+    setDisk(null);
+    setConflict(null);
+    dismissed.current = null;
+    setError(null);
     try {
-      const saved = await saveDocument(edit.text, edit.base);
-      setEdit(key, null);
-      setCurrent({ ...current, doc: saved });
-      setError(null);
+      await clearDraft();
+    } catch (e) {
+      setError(message(e));
+    }
+  };
+
+  /** A refused save keeps the text and the marker. A changed file opens the conflict dialog (F3 spec D25). */
+  const refused = async (e: unknown) => {
+    if (e instanceof CommandError && e.kind === "missing") return setDisk({ status: "missing" });
+    if (e instanceof CommandError && e.kind === "conflict") {
+      try {
+        return openConflict(await checkDocument(), true);
+      } catch {
+        // fall through to show the original message
+      }
+    }
+    setError(message(e));
+  };
+
+  /** Saves the active tab's text, unless the file changed or is gone. */
+  const save = async () => {
+    if (!current || !edit || disk?.status === "missing") return;
+    try {
+      const status = await checkDocument(); // just before a save (F3 spec D24)
+      if (status.status !== "unchanged") {
+        if (status.status === "changed") setDisk(status);
+        return openConflict(status, true);
+      }
+      await saved(await saveDocument(edit.text, edit.base));
+    } catch (e) {
+      await refused(e);
+    }
+  };
+
+  /** Only called from the second confirmation. It saves over the disk version, which is backed up first. */
+  const overwrite = async () => {
+    if (!conflict || !edit) return;
+    try {
+      await saved(await saveDocument(edit.text, conflict.diskHash));
+    } catch (e) {
+      await refused(e);
+    }
+  };
+
+  /** Keeps the user's text as a backup, then shows the file as it is on disk. */
+  const loadDisk = async () => {
+    if (!edit || current?.path == null) return;
+    try {
+      await backupText(edit.text);
+      await clearDraft();
+    } catch (e) {
+      return setError(message(e)); // the text is not backed up, so keep it in the editor
+    }
+    setEdit(key, null);
+    setConflict(null);
+    await activate(current.path);
+  };
+
+  const restore = () => {
+    if (!recover) return;
+    setEdit(key, { text: recover.draft.text, base: recover.draft.base_hash });
+    setMode(key, "source");
+    setRecover(null);
+  };
+
+  const discardDraft = async () => {
+    setRecover(null);
+    try {
+      await clearDraft();
     } catch (e) {
       setError(message(e));
     }
@@ -169,6 +358,44 @@ export default function Workspace({ project, quickDoc, onHome }: Props) {
           </button>
         </div>
       )}
+      {conflict && edit && (
+        <Conflict
+          key={conflict.diskHash}
+          canLoad={current?.path != null}
+          onKeep={() => {
+            dismissed.current = conflict.diskHash;
+            setConflict(null);
+          }}
+          onLoad={() => void loadDisk()}
+          onOverwrite={() => void overwrite()}
+        />
+      )}
+      {recover && current && recover.n === current.n && (
+        <Recovery
+          name={current.doc.name}
+          draft={recover.draft}
+          onRestore={restore}
+          onDiscard={() => void discardDraft()}
+        />
+      )}
+      {disk?.status === "missing" && (
+        <p role="status" className="banner">
+          {current?.doc.name} is no longer where it was ({current?.doc.path}). Saving is off. Your
+          text stays here.
+        </p>
+      )}
+      {disk?.status === "changed" && !edit && (
+        <p role="status" className="banner">
+          {current?.doc.name} changed on disk.{" "}
+          {current?.path != null ? (
+            <button type="button" onClick={() => void activate(current.path!)}>
+              Reload
+            </button>
+          ) : (
+            "Open it again from the home screen to see the new text."
+          )}
+        </p>
+      )}
       <div
         className={`workspace-body${left && isProject ? "" : " no-left"}${right ? "" : " no-right"}`}
       >
@@ -213,7 +440,11 @@ export default function Workspace({ project, quickDoc, onHome }: Props) {
                 Source
               </button>
               {mode === "source" && (
-                <button type="button" disabled={!edit} onClick={() => void save()}>
+                <button
+                  type="button"
+                  disabled={!edit || disk?.status === "missing"}
+                  onClick={() => void save()}
+                >
                   Save
                 </button>
               )}
