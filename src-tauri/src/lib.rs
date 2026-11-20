@@ -1,6 +1,7 @@
 pub mod commands;
 pub mod document;
 pub mod domain;
+pub mod feedback;
 pub mod markdown;
 pub mod store;
 
@@ -21,7 +22,8 @@ pub fn run() {
             commands::create_annotation,
             commands::list_annotations,
             commands::update_annotation,
-            commands::delete_annotation
+            commands::delete_annotation,
+            commands::generate_feedback
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,5 +1,6 @@
 use crate::document::{open_path, AppState, CommandError, ErrorKind, OpenedDocument};
 use crate::domain::entities::Annotation;
+use crate::feedback::{build_feedback, FeedbackInput};
 use crate::markdown::{resolve_anchor, ResolvedAnchor};
 use crate::store::annotations::now_rfc3339;
 use crate::store::{AnnotationView, Store};
@@ -79,4 +80,22 @@ pub fn delete_annotation(
     id: String,
 ) -> Result<(), CommandError> {
     state.with_open(|doc| store.delete(doc, &id))?
+}
+
+/// The exact prompt the export panel shows and copies (F2 spec D25).
+#[tauri::command]
+pub fn generate_feedback(
+    state: State<'_, AppState>,
+    store: State<'_, Store>,
+) -> Result<String, CommandError> {
+    state.with_open(|doc| {
+        let annotations = store.list(doc)?;
+        Ok(build_feedback(&FeedbackInput {
+            name: &doc.name,
+            version_id: &String::from(doc.version_id.clone()),
+            source_hash: &doc.source_hash,
+            source: &doc.source,
+            annotations: &annotations,
+        }))
+    })?
 }

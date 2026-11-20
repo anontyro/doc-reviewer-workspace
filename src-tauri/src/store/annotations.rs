@@ -21,6 +21,20 @@ pub struct AnnotationView {
     pub stale: bool,
 }
 
+/// How a stored annotation stands against the text of the open file now.
+pub fn view(source: &str, source_hash: &str, annotation: Annotation) -> AnnotationView {
+    AnnotationView {
+        current: resolve_anchor(
+            source,
+            &annotation.anchor.exact,
+            &annotation.anchor.prefix,
+            &annotation.anchor.suffix,
+        ),
+        stale: annotation.anchor.source_hash != source_hash,
+        annotation,
+    }
+}
+
 pub fn now_rfc3339() -> String {
     OffsetDateTime::now_utc()
         .format(&Rfc3339)
@@ -172,16 +186,7 @@ impl Store {
             .load(doc)?
             .annotations
             .into_iter()
-            .map(|annotation| AnnotationView {
-                current: resolve_anchor(
-                    &doc.source,
-                    &annotation.anchor.exact,
-                    &annotation.anchor.prefix,
-                    &annotation.anchor.suffix,
-                ),
-                stale: annotation.anchor.source_hash != doc.source_hash,
-                annotation,
-            })
+            .map(|annotation| view(&doc.source, &doc.source_hash, annotation))
             .collect())
     }
 
