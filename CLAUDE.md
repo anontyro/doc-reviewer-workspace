@@ -38,7 +38,7 @@ src/            React + TypeScript UI          src-tauri/   Rust: commands, doma
 schemas/        JSON Schema (generated)        fixtures/    shared test fixtures
 ```
 
-- Web (repo root): `pnpm run check` (typecheck, lint, format:check, test) · `pnpm test` alone for tests
+- Web (repo root): `pnpm run check` (typecheck, lint, format:check, test) · `pnpm test` alone for tests · `pnpm run test:e2e` browser UI tests (Playwright, Rust faked)
 - Rust (`src-tauri/`): `cargo fmt --check` · `cargo clippy --all-targets -- -D warnings` · `cargo test`
 - App: `pnpm tauri dev` · `pnpm tauri build` (`--debug` for a debug bundle)
 

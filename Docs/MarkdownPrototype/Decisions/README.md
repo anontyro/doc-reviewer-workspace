@@ -42,3 +42,9 @@ does it, read the code.
 | # | Decision | Written by |
 |---|---|---|
 | [0004](0004-feedback-prompt-format.md) | The feedback prompt is a pure, deterministic function, and quotes and comments sit in length-safe fences so they stay verbatim. | P7 |
+
+## After F2 completion
+
+| # | Decision | Written by |
+|---|---|---|
+| [0005](0005-browser-e2e-with-playwright.md) | A small Playwright suite runs the web UI in Chromium and WebKit with the Rust side faked, on demand, outside `pnpm run check`. | Post-completion change |

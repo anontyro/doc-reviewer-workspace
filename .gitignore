@@ -34,3 +34,7 @@ npm-debug.log*
 
 # Vitest reporter output
 .vitest/
+
+# Playwright
+test-results/
+playwright-report/
