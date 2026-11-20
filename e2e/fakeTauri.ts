@@ -62,7 +62,10 @@ export async function installFakeTauri(
         {
           path: `/tmp/${name}`,
           name,
-          document_id: `doc_${name.length.toString(16).padStart(16, "0")}`,
+          document_id: `doc_${[...name]
+            .reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 0xffffffff, 7)
+            .toString(16)
+            .padStart(16, "0")}`,
           version_id: "ver_0123456789abcdef",
           source_hash: hash(name),
           source: sources[name],

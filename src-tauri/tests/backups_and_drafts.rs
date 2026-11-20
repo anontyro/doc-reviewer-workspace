@@ -446,3 +446,44 @@ fn unsaved_text_can_be_kept_as_a_backup_without_touching_the_file() {
         ErrorKind::TooLarge
     );
 }
+
+#[test]
+fn a_draft_call_for_another_document_is_refused_and_does_nothing() {
+    let e = project_env("draft-wrong-doc", b"# A\n");
+    let other = DocumentId::try_from("doc_ffffffffffffffff".to_string()).unwrap();
+    let mut ran = false;
+    let err = e
+        .state
+        .with_document(&other, |_, _| ran = true)
+        .unwrap_err();
+    assert_eq!(err.kind, ErrorKind::Invalid);
+    assert!(
+        !ran,
+        "the work must not run for a document that is not active"
+    );
+    // The active document's own id is accepted.
+    assert!(e
+        .state
+        .with_document(&doc_id(&e), |d, _| d.name.clone())
+        .is_ok());
+    assert_eq!(
+        AppState::default()
+            .with_document(&other, |_, _| ())
+            .unwrap_err()
+            .kind,
+        ErrorKind::NoDocument
+    );
+}
+
+#[test]
+fn cleanup_does_not_follow_a_symlink_out_of_review_workspace() {
+    let folder = Temp::new("crash-link");
+    let outside = Temp::new("crash-link-outside");
+    let app = Temp::new("crash-link-app");
+    let projects = Projects::new(app.0.join("library.json"));
+    projects.create(&folder.0, "P", NOW).unwrap();
+    let victim = outside.file(".mine.tmp-1", b"not the app's file");
+    std::os::unix::fs::symlink(&outside.0, folder.0.join(".review-workspace/annotations")).unwrap();
+    projects.open(&folder.0, NOW).unwrap();
+    assert!(victim.exists());
+}

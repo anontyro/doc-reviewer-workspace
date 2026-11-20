@@ -253,6 +253,7 @@ describe("drafts", () => {
     await act(async () => void vi.advanceTimersByTime(1));
     expect(called("save_draft")).toHaveLength(1);
     expect(called("save_draft")[0].args).toEqual({
+      documentId: plan.document_id,
       text: "# Plan\nmine\n",
       baseHash: plan.source_hash,
     });
@@ -361,5 +362,131 @@ describe("recovery", () => {
     expect(host.querySelector('[role="alert"]')!.textContent).toContain("newer version");
     expect(host.querySelector("article h1")!.textContent).toBe("Plan");
     expect(called("clear_draft")).toHaveLength(0);
+  });
+});
+
+describe("drafts belong to their document", () => {
+  const notes: OpenedDocument = {
+    ...plan,
+    path: "/p/notes.md",
+    name: "notes.md",
+    document_id: "doc_1111111111111111",
+    source: "# Notes\n",
+    html: "<h1>Notes</h1>",
+  };
+  const two: ProjectView = {
+    ...project,
+    documents: [
+      { relative_path: "plan.md", name: "plan.md" },
+      { relative_path: "notes.md", name: "notes.md" },
+    ],
+  };
+  const mountTwo = async () => {
+    backend = fakeBackend(plan);
+    backend.state.docs = { "plan.md": plan, "notes.md": notes };
+    mockIPC(backend.handler);
+    host = document.createElement("div");
+    document.body.appendChild(host);
+    root = createRoot(host);
+    await act(async () => root!.render(<Workspace project={two} onHome={() => {}} />));
+  };
+
+  it("clears the draft of a background tab that is discarded, then goes back to the current tab", async () => {
+    await mountTwo();
+    await click("plan.md");
+    await click("Source");
+    await type("mine\n"); // plan.md is now unsaved
+    await click("notes.md"); // notes.md is active, plan.md stays open and unsaved
+    const before = backend.state.calls.length;
+
+    await click("Close plan.md");
+    await click("Discard changes");
+    const after = backend.state.calls
+      .slice(before)
+      .filter((c) => ["open_project_document", "clear_draft"].includes(c.cmd));
+    expect(after.map((c) => [c.cmd, c.args])).toEqual([
+      ["open_project_document", { relativePath: "plan.md" }],
+      ["clear_draft", { documentId: plan.document_id }],
+      ["open_project_document", { relativePath: "notes.md" }], // Rust is pointed back at the tab that stays
+    ]);
+    expect([...host.querySelectorAll('[role="tab"]')].map((t) => t.textContent)).toEqual([
+      "notes.md",
+    ]);
+  });
+
+  it("leaving the project clears the draft of every unsaved tab", async () => {
+    await mountTwo();
+    await click("plan.md");
+    await click("Source");
+    await type("a\n");
+    await click("notes.md");
+    await click("Source");
+    await type("b\n");
+    const before = backend.state.calls.length;
+    await click("Back to projects");
+    await click("Discard changes");
+    const cleared = backend.state.calls
+      .slice(before)
+      .filter((c) => c.cmd === "clear_draft")
+      .map((c) => c.args);
+    expect(cleared).toEqual([{ documentId: plan.document_id }, { documentId: notes.document_id }]);
+  });
+
+  it("a successful save clears that document's draft by id", async () => {
+    await mount();
+    await openDirty();
+    await saveKey();
+    expect(called("clear_draft")[0].args).toEqual({ documentId: plan.document_id });
+  });
+
+  it("a Quick Open file is offered its draft and restores it", async () => {
+    backend = fakeBackend(plan);
+    backend.state.draft = draft();
+    mockIPC(backend.handler);
+    host = document.createElement("div");
+    document.body.appendChild(host);
+    root = createRoot(host);
+    await act(async () => root!.render(<Workspace quickDoc={plan} onHome={() => {}} />));
+    expect(called("read_draft")[0].args).toEqual({ documentId: plan.document_id });
+    expect(dialog("Unsaved text found")).not.toBeNull();
+    await click("Restore");
+    await click("Source");
+    expect(view().state.sliceDoc()).toBe("# Plan\nfrom a crashed session\n");
+  });
+
+  it("a Quick Open draft equal to the file is not offered", async () => {
+    backend = fakeBackend(plan);
+    backend.state.draft = draft({ text: plan.source });
+    mockIPC(backend.handler);
+    host = document.createElement("div");
+    document.body.appendChild(host);
+    root = createRoot(host);
+    await act(async () => root!.render(<Workspace quickDoc={plan} onHome={() => {}} />));
+    expect(dialog("Unsaved text found")).toBeNull();
+  });
+});
+
+describe("a file reported missing", () => {
+  it("Check again re-enables saving once the file is back", async () => {
+    await mount();
+    await openDirty();
+    backend.state.status = { status: "missing" };
+    await focusWindow();
+    expect(button("Save").disabled).toBe(true);
+    backend.state.status = { status: "unchanged" };
+    await click("Check again");
+    expect(host.querySelector(".banner")).toBeNull();
+    expect(button("Save").disabled).toBe(false);
+  });
+
+  it("Cmd+S checks again instead of staying stuck, and saves when the file is back", async () => {
+    await mount();
+    await openDirty();
+    backend.state.status = { status: "missing" };
+    await focusWindow();
+    backend.state.status = { status: "unchanged" };
+    await saveKey();
+    expect(called("save_document")).toHaveLength(1);
+    expect(host.querySelector(".banner")).toBeNull();
   });
 });

@@ -52,10 +52,6 @@ pub struct Store {
     lock: Arc<Mutex<()>>,
 }
 
-fn io(msg: impl std::fmt::Display) -> CommandError {
-    CommandError::new(ErrorKind::Io, msg.to_string())
-}
-
 fn invalid(msg: impl Into<String>) -> CommandError {
     CommandError::new(ErrorKind::Invalid, msg)
 }
@@ -103,7 +99,7 @@ impl Store {
             });
         };
         if file.document_id != doc.document_id {
-            return Err(io(format!(
+            return Err(CommandError::io(format!(
                 "the comments file {} is unusable: it belongs to a different document",
                 path.display()
             )));
@@ -113,17 +109,17 @@ impl Store {
 
     fn save(&self, doc: &OpenedDocument, mut file: AnnotationFile) -> Result<(), CommandError> {
         file.path = doc.path.clone();
-        let mut json = serde_json::to_string_pretty(&file).map_err(io)?;
+        let mut json = serde_json::to_string_pretty(&file).map_err(CommandError::io)?;
         json.push('\n');
-        fs::create_dir_all(&self.dir).map_err(io)?;
+        fs::create_dir_all(&self.dir).map_err(CommandError::io)?;
         write_atomic(&self.file_path(doc), json.as_bytes())
-            .map_err(|e| io(format!("could not save comments: {e}")))
+            .map_err(|e| CommandError::io(format!("could not save comments: {e}")))
     }
 
     fn locked(&self) -> Result<std::sync::MutexGuard<'_, ()>, CommandError> {
         self.lock
             .lock()
-            .map_err(|_| io("comment store is unavailable"))
+            .map_err(|_| CommandError::io("comment store is unavailable"))
     }
 
     /// Resolves the selection against the open text itself and saves a comment only if it is `resolved`.

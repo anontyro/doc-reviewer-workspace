@@ -7,10 +7,6 @@ use crate::domain::schema_version::CURRENT_SCHEMA_VERSION;
 use crate::store::atomic::{read_versioned_json, write_atomic};
 use std::{fs, path::Path};
 
-fn io(msg: impl std::fmt::Display) -> CommandError {
-    CommandError::new(ErrorKind::Io, msg.to_string())
-}
-
 /// A missing file is an empty library. An unreadable or newer one is an error and is never overwritten.
 pub fn read(path: &Path) -> Result<LibraryFile, CommandError> {
     Ok(
@@ -28,12 +24,13 @@ pub fn write(path: &Path, file: &mut LibraryFile) -> Result<(), CommandError> {
             String::from(a.project_id.clone()).cmp(&String::from(b.project_id.clone()))
         })
     });
-    let mut json = serde_json::to_string_pretty(file).map_err(io)?;
+    let mut json = serde_json::to_string_pretty(file).map_err(CommandError::io)?;
     json.push('\n');
     if let Some(dir) = path.parent() {
-        fs::create_dir_all(dir).map_err(io)?;
+        fs::create_dir_all(dir).map_err(CommandError::io)?;
     }
-    write_atomic(path, json.as_bytes()).map_err(|e| io(format!("could not save the library: {e}")))
+    write_atomic(path, json.as_bytes())
+        .map_err(|e| CommandError::io(format!("could not save the library: {e}")))
 }
 
 /// Adds the project, or updates the entry that has the same id (so a moved folder is found again).

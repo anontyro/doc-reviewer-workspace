@@ -40,10 +40,6 @@ pub struct LibraryItem {
     pub missing: bool,
 }
 
-fn io(msg: impl std::fmt::Display) -> CommandError {
-    CommandError::new(ErrorKind::Io, msg.to_string())
-}
-
 /// A project name is 1 to 100 characters after trimming, with no control characters (F3 spec D5).
 /// Deletes the temp files a crash left inside `dir` and its sub-folders: `.<name>.tmp-<pid>` (F3 spec D28).
 /// Only called on the project's own `.review-workspace/` folder, never on the user's files.
@@ -51,7 +47,8 @@ fn clean_temp_files(dir: &Path) {
     for entry in fs::read_dir(dir).into_iter().flatten().flatten() {
         let path = entry.path();
         let name = entry.file_name().to_string_lossy().into_owned();
-        if path.is_dir() {
+        // file_type does not follow symlinks, so a link in here can never send the cleanup outside the project.
+        if entry.file_type().is_ok_and(|t| t.is_dir()) {
             clean_temp_files(&path);
         } else if name.starts_with('.') && name.contains(".tmp-") {
             let _ = fs::remove_file(&path);
@@ -127,14 +124,14 @@ impl Projects {
     fn locked(&self) -> Result<MutexGuard<'_, ()>, CommandError> {
         self.lock
             .lock()
-            .map_err(|_| io("project state is unavailable"))
+            .map_err(|_| CommandError::io("project state is unavailable"))
     }
 
     fn write_project(&self, root: &Path, p: &ProjectFile) -> Result<(), CommandError> {
-        let mut json = serde_json::to_string_pretty(p).map_err(io)?;
+        let mut json = serde_json::to_string_pretty(p).map_err(CommandError::io)?;
         json.push('\n');
         write_atomic(&project_path(root), json.as_bytes())
-            .map_err(|e| io(format!("could not save the project: {e}")))
+            .map_err(|e| CommandError::io(format!("could not save the project: {e}")))
     }
 
     fn remember(&self, root: &Path, p: &ProjectFile, now: &str) -> Result<(), CommandError> {
@@ -182,14 +179,14 @@ impl Projects {
             updated_at: now.to_string(),
             documents: vec![],
         };
-        fs::create_dir_all(root.join(DIR)).map_err(io)?;
-        let mut json = serde_json::to_string_pretty(&project).map_err(io)?;
+        fs::create_dir_all(root.join(DIR)).map_err(CommandError::io)?;
+        let mut json = serde_json::to_string_pretty(&project).map_err(CommandError::io)?;
         json.push('\n');
         write_new(&project_path(&root), json.as_bytes()).map_err(|e| {
             if e.kind() == IoKind::AlreadyExists {
                 CommandError::new(ErrorKind::Exists, "that folder is already a project")
             } else {
-                io(format!("could not create the project: {e}"))
+                CommandError::io(format!("could not create the project: {e}"))
             }
         })?;
         self.remember(&root, &project, now)?;
@@ -308,13 +305,13 @@ impl Projects {
             .map(|n| n.to_string_lossy().into_owned())
             .unwrap_or_default();
         paths::validate_relative(&name)?;
-        if fs::metadata(&source).map_err(io)?.len() > MAX_BYTES {
+        if fs::metadata(&source).map_err(CommandError::io)?.len() > MAX_BYTES {
             return Err(CommandError::new(
                 ErrorKind::TooLarge,
                 "file is larger than 10 MiB",
             ));
         }
-        let bytes = fs::read(&source).map_err(io)?;
+        let bytes = fs::read(&source).map_err(CommandError::io)?;
         if std::str::from_utf8(&bytes).is_err() {
             return Err(CommandError::new(
                 ErrorKind::NotUtf8,
@@ -337,7 +334,7 @@ impl Projects {
                 if e.kind() == IoKind::AlreadyExists {
                     taken()
                 } else {
-                    io(format!("could not copy the file: {e}"))
+                    CommandError::io(format!("could not copy the file: {e}"))
                 }
             })?;
         }

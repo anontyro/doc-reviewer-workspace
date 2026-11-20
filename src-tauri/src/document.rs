@@ -37,6 +37,11 @@ pub struct CommandError {
 }
 
 impl CommandError {
+    /// A file or state problem (`io`) with a message for the user.
+    pub fn io(msg: impl std::fmt::Display) -> Self {
+        Self::new(ErrorKind::Io, msg.to_string())
+    }
+
     pub fn new(kind: ErrorKind, message: impl Into<String>) -> Self {
         Self {
             kind,
@@ -78,7 +83,7 @@ fn check_text(doc: &OpenedDocument) -> Result<DocStatus, CommandError> {
             })
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(DocStatus::Missing),
-        Err(e) => Err(io(e)),
+        Err(e) => Err(CommandError::io(e)),
     }
 }
 
@@ -159,6 +164,25 @@ impl AppState {
         self.with_open(check_text)?
     }
 
+    /// Like `with_active`, but only if the active document is `id`. A call that was meant for another document,
+    /// because the user switched tabs while it was on its way, fails with `invalid` and does nothing.
+    pub fn with_document<T>(
+        &self,
+        id: &DocumentId,
+        f: impl FnOnce(&OpenedDocument, &Scope) -> T,
+    ) -> Result<T, CommandError> {
+        self.with_active(|doc, scope| {
+            if &doc.document_id == id {
+                Ok(f(doc, scope))
+            } else {
+                Err(CommandError::new(
+                    ErrorKind::Invalid,
+                    "that document is no longer the active one",
+                ))
+            }
+        })?
+    }
+
     /// Runs `f` on the open document and its scope, or fails with `no_document`.
     pub fn with_active<T>(
         &self,
@@ -228,10 +252,6 @@ pub fn sha256_hex(bytes: &[u8]) -> String {
     hex(&Sha256::digest(bytes))
 }
 
-fn io(e: std::io::Error) -> CommandError {
-    CommandError::new(ErrorKind::Io, e.to_string())
-}
-
 /// Reads and renders a file. Never writes to it (AT-02).
 pub fn open_path(path: &Path) -> Result<OpenedDocument, CommandError> {
     open_with(path, |canonical| sha256_hex(canonical.as_bytes()))
@@ -255,7 +275,7 @@ fn open_with(
     path: &Path,
     id_source_hash: impl FnOnce(&str) -> String,
 ) -> Result<OpenedDocument, CommandError> {
-    let path = fs::canonicalize(path).map_err(io)?;
+    let path = fs::canonicalize(path).map_err(CommandError::io)?;
     let path_str = path.to_string_lossy().into_owned();
     let document_id = DocumentId::try_from(format!("doc_{}", &id_source_hash(&path_str)[..16]))
         .map_err(|e| CommandError::new(ErrorKind::Invalid, e))?;
@@ -264,13 +284,13 @@ fn open_with(
 
 /// Reads, checks and renders the file at `path` (already canonical) as the document `document_id`.
 fn read_document(path: PathBuf, document_id: DocumentId) -> Result<OpenedDocument, CommandError> {
-    if fs::metadata(&path).map_err(io)?.len() > MAX_BYTES {
+    if fs::metadata(&path).map_err(CommandError::io)?.len() > MAX_BYTES {
         return Err(CommandError::new(
             ErrorKind::TooLarge,
             "file is larger than 10 MiB",
         ));
     }
-    let bytes = fs::read(&path).map_err(io)?;
+    let bytes = fs::read(&path).map_err(CommandError::io)?;
     let source_hash = sha256_hex(&bytes);
     let source = String::from_utf8(bytes)
         .map_err(|_| CommandError::new(ErrorKind::NotUtf8, "file is not UTF-8 text"))?;
@@ -314,7 +334,7 @@ fn save_text(
                 format!("{} is no longer where it was", doc.path),
             ))
         }
-        Err(e) => return Err(io(e)),
+        Err(e) => return Err(CommandError::io(e)),
     };
     if sha256_hex(&on_disk) != expected_hash {
         return Err(CommandError::new(
@@ -322,7 +342,7 @@ fn save_text(
             "the file changed on disk since it was opened",
         ));
     }
-    let permissions = fs::metadata(path).map_err(io)?.permissions();
+    let permissions = fs::metadata(path).map_err(CommandError::io)?.permissions();
     // The old bytes are kept first. If that fails nothing is written (F3 spec D26).
     backup::write_backup(backup_dir, &on_disk, now)?;
     crate::store::atomic::write_atomic(path, text.as_bytes())

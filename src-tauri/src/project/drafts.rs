@@ -13,10 +13,6 @@ pub struct Drafts {
     lock: Mutex<()>,
 }
 
-fn io(msg: impl std::fmt::Display) -> CommandError {
-    CommandError::new(ErrorKind::Io, msg.to_string())
-}
-
 impl Drafts {
     pub fn new(quick: PathBuf) -> Self {
         Self {
@@ -31,7 +27,9 @@ impl Drafts {
     }
 
     fn locked(&self) -> Result<std::sync::MutexGuard<'_, ()>, CommandError> {
-        self.lock.lock().map_err(|_| io("drafts are unavailable"))
+        self.lock
+            .lock()
+            .map_err(|_| CommandError::io("drafts are unavailable"))
     }
 
     /// The saved draft, if any. An unreadable or newer file is an error and is left where it is.
@@ -69,12 +67,12 @@ impl Drafts {
             text: text.to_string(),
             saved_at: now.to_string(),
         };
-        let json = serde_json::to_string_pretty(&draft).map_err(io)?;
+        let json = serde_json::to_string_pretty(&draft).map_err(CommandError::io)?;
         if let Some(dir) = path.parent() {
-            fs::create_dir_all(dir).map_err(io)?;
+            fs::create_dir_all(dir).map_err(CommandError::io)?;
         }
         write_atomic(&path, json.as_bytes())
-            .map_err(|e| io(format!("could not save the draft: {e}")))
+            .map_err(|e| CommandError::io(format!("could not save the draft: {e}")))
     }
 
     /// Removes the draft. A draft that cannot be read is left alone and reported.
@@ -85,7 +83,7 @@ impl Drafts {
         match fs::remove_file(&path) {
             Ok(()) => Ok(()),
             Err(e) if e.kind() == IoKind::NotFound => Ok(()),
-            Err(e) => Err(io(e)),
+            Err(e) => Err(CommandError::io(e)),
         }
     }
 }

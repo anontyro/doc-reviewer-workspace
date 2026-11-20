@@ -3,7 +3,7 @@ use crate::document::{
     ProjectContext, Scope,
 };
 use crate::domain::entities::Annotation;
-use crate::domain::entities::ProjectId;
+use crate::domain::entities::{DocumentId, ProjectId};
 use crate::domain::project::DraftFile;
 use crate::feedback::{build_feedback, FeedbackInput};
 use crate::markdown::{resolve_anchor, ResolvedAnchor};
@@ -70,10 +70,11 @@ pub fn check_document(state: State<'_, AppState>) -> Result<DocStatus, CommandEr
 pub fn save_draft(
     state: State<'_, AppState>,
     drafts: State<'_, Drafts>,
+    document_id: DocumentId,
     text: String,
     base_hash: String,
 ) -> Result<(), CommandError> {
-    state.with_active(|doc, scope| {
+    state.with_document(&document_id, |doc, scope| {
         drafts.save(scope, &doc.document_id, &text, &base_hash, &now_rfc3339())
     })?
 }
@@ -82,16 +83,22 @@ pub fn save_draft(
 pub fn read_draft(
     state: State<'_, AppState>,
     drafts: State<'_, Drafts>,
+    document_id: DocumentId,
 ) -> Result<Option<DraftFile>, CommandError> {
-    state.with_active(|doc, scope| drafts.read(scope, &doc.document_id))?
+    state.with_document(&document_id, |doc, scope| {
+        drafts.read(scope, &doc.document_id)
+    })?
 }
 
 #[tauri::command]
 pub fn clear_draft(
     state: State<'_, AppState>,
     drafts: State<'_, Drafts>,
+    document_id: DocumentId,
 ) -> Result<(), CommandError> {
-    state.with_active(|doc, scope| drafts.clear(scope, &doc.document_id))?
+    state.with_document(&document_id, |doc, scope| {
+        drafts.clear(scope, &doc.document_id)
+    })?
 }
 
 /// Maps a rendered-text selection to the open document's source (F2 spec D5).

@@ -5,6 +5,7 @@ import {
   checkDocument,
   clearDraft,
   CommandError,
+  message,
   openProjectDocument,
   readDraft,
   saveDocument,
@@ -16,7 +17,6 @@ import {
 import type { DraftFile } from "../domain/generated/domain.schema";
 import SourceEditor from "../editor/SourceEditor";
 import Reader from "../reader/Reader";
-import { message } from "../project/useLibrary";
 import Explorer, { visible } from "./Explorer";
 import Tabs from "./Tabs";
 import Conflict from "./Conflict";
@@ -82,19 +82,23 @@ export default function Workspace({ project, quickDoc, onHome }: Props) {
   // While the text is unsaved it is written to a draft shortly after the last keystroke, and never while it is saved.
   const draftText = edit?.text;
   const draftBase = edit?.base;
+  const draftDoc = current?.doc.document_id;
   useEffect(() => {
-    if (draftText === undefined || draftBase === undefined) return;
+    if (draftText === undefined || draftBase === undefined || draftDoc === undefined) return;
     const timer = setTimeout(() => {
-      saveDraft(draftText, draftBase).catch((e) => setError(message(e)));
+      saveDraft(draftDoc, draftText, draftBase).catch((e) => {
+        // `invalid` means the user already moved to another document, which holds its own draft.
+        if (!(e instanceof CommandError && e.kind === "invalid")) setError(message(e));
+      });
     }, DRAFT_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [draftText, draftBase, key]);
+  }, [draftText, draftBase, draftDoc]);
 
   // A Quick Open file is already active, so look for its draft once.
   useEffect(() => {
     if (!quickDoc) return;
     let live = true;
-    readDraft().then(
+    readDraft(quickDoc.document_id).then(
       (d) => live && d && d.text !== quickDoc.source && setRecover({ n: 0, draft: d }),
       (e) => live && setError(message(e)),
     );
@@ -148,10 +152,10 @@ export default function Workspace({ project, quickDoc, onHome }: Props) {
   /** Looks for unsaved text left by an earlier session. A tab that already has unsaved text in memory keeps that. */
   const offerDraft = async (doc: OpenedDocument, path: string, n: number) => {
     try {
-      const draft = await readDraft();
+      const draft = await readDraft(doc.document_id);
       if (n !== latest.current || !draft || edits[path]) return;
       if (draft.text === doc.source)
-        await clearDraft(); // nothing to restore
+        await clearDraft(doc.document_id); // nothing to restore
       else setRecover({ n, draft });
     } catch (e) {
       if (n === latest.current) setError(message(e)); // a draft that cannot be read stays where it is
@@ -164,10 +168,10 @@ export default function Workspace({ project, quickDoc, onHome }: Props) {
       let moved = false;
       for (const p of paths) {
         if (p !== key) {
-          await openProjectDocument(p);
+          const other = await openProjectDocument(p);
           moved = true;
-        }
-        await clearDraft();
+          await clearDraft(other.document_id);
+        } else if (current) await clearDraft(current.doc.document_id);
       }
       if (moved && backToCurrent && current?.path) await activate(current.path);
     } catch (e) {
@@ -227,7 +231,7 @@ export default function Workspace({ project, quickDoc, onHome }: Props) {
     dismissed.current = null;
     setError(null);
     try {
-      await clearDraft();
+      await clearDraft(doc.document_id);
     } catch (e) {
       setError(message(e));
     }
@@ -246,16 +250,18 @@ export default function Workspace({ project, quickDoc, onHome }: Props) {
     setError(message(e));
   };
 
-  /** Saves the active tab's text, unless the file changed or is gone. */
-  const save = async () => {
-    if (!current || !edit || disk?.status === "missing") return;
+  /** Saves the tab's text (the editor passes its latest), unless the file changed or is gone. */
+  const save = async (latest?: string) => {
+    const text = latest ?? edit?.text;
+    if (!current || text === undefined || (!edit && text === current.doc.source)) return;
     try {
       const status = await checkDocument(); // just before a save (F3 spec D24)
       if (status.status !== "unchanged") {
         if (status.status === "changed") setDisk(status);
         return openConflict(status, true);
       }
-      await saved(await saveDocument(edit.text, edit.base));
+      setDisk(null); // the file is there again if it had been reported missing
+      await saved(await saveDocument(text, edit?.base ?? current.doc.source_hash));
     } catch (e) {
       await refused(e);
     }
@@ -276,7 +282,7 @@ export default function Workspace({ project, quickDoc, onHome }: Props) {
     if (!edit || current?.path == null) return;
     try {
       await backupText(edit.text);
-      await clearDraft();
+      await clearDraft(current.doc.document_id);
     } catch (e) {
       return setError(message(e)); // the text is not backed up, so keep it in the editor
     }
@@ -293,9 +299,10 @@ export default function Workspace({ project, quickDoc, onHome }: Props) {
   };
 
   const discardDraft = async () => {
+    const id = recover?.draft.document_id;
     setRecover(null);
     try {
-      await clearDraft();
+      if (id) await clearDraft(id);
     } catch (e) {
       setError(message(e));
     }
@@ -381,7 +388,10 @@ export default function Workspace({ project, quickDoc, onHome }: Props) {
       {disk?.status === "missing" && (
         <p role="status" className="banner">
           {current?.doc.name} is no longer where it was ({current?.doc.path}). Saving is off. Your
-          text stays here.
+          text stays here.{" "}
+          <button type="button" onClick={() => void runCheck()}>
+            Check again
+          </button>
         </p>
       )}
       {disk?.status === "changed" && !edit && (
@@ -460,7 +470,7 @@ export default function Workspace({ project, quickDoc, onHome }: Props) {
               key={current.n}
               initial={edit?.text ?? current.doc.source}
               onChange={typed}
-              onSave={() => void save()}
+              onSave={(text) => void save(text)}
             />
           ) : current ? (
             <Reader

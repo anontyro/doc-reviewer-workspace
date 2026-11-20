@@ -3,6 +3,7 @@ import {
   createAnnotation,
   deleteAnnotation,
   listAnnotations,
+  message,
   updateAnnotation,
   type AnnotationView,
   type OpenedDocument,
@@ -17,8 +18,6 @@ export function refusal(r: ResolvedAnchor): string | null {
     return `This selection matches ${r.candidates} places. Select more text.`;
   return "The selected text was not found in the document.";
 }
-
-const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 /**
  * The comments of `doc`, the active document. Rust owns them: every change goes through a command and the list shown is always

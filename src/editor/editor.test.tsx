@@ -334,3 +334,93 @@ describe("unsaved edits", () => {
     expect(onHome).toHaveBeenCalledOnce();
   });
 });
+
+describe("large files", () => {
+  const mountEditor = async (
+    initial: string,
+    onChange: (t: string) => void,
+    onSave: (t: string) => void,
+  ) => {
+    const host2 = document.createElement("div");
+    document.body.appendChild(host2);
+    const r = createRoot(host2);
+    await act(async () =>
+      r.render(<SourceEditor initial={initial} onChange={onChange} onSave={onSave} />),
+    );
+    const v = EditorView.findFromDOM(host2.querySelector<HTMLElement>(".cm-editor")!)!;
+    const unmount = () => {
+      act(() => r.unmount());
+      host2.remove();
+    };
+    return { v, host2, unmount };
+  };
+  const big = "word ".repeat(250_000); // 1.25 million characters
+
+  it("reports a change after a short pause, not on every keystroke", async () => {
+    vi.useFakeTimers();
+    const seen: number[] = [];
+    const { v, unmount } = await mountEditor(
+      big,
+      (t) => seen.push(t.length),
+      () => {},
+    );
+    await act(async () => v.dispatch({ changes: { from: 0, insert: "a" } }));
+    await act(async () => v.dispatch({ changes: { from: 0, insert: "b" } }));
+    expect(seen).toEqual([]);
+    await act(async () => void vi.advanceTimersByTime(300));
+    expect(seen).toEqual([big.length + 2]); // one report with the latest text
+    unmount();
+    vi.useRealTimers();
+  });
+
+  it("Cmd+S sends the latest text at once, without waiting for the pause", async () => {
+    vi.useFakeTimers();
+    const saved: string[] = [];
+    const { v, host2, unmount } = await mountEditor(
+      big,
+      () => {},
+      (t) => saved.push(t),
+    );
+    await act(async () => v.dispatch({ changes: { from: 0, insert: "X" } }));
+    await act(async () => {
+      host2.querySelector(".cm-content")!.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          key: "s",
+          ctrlKey: true,
+          bubbles: true,
+          cancelable: true,
+        }),
+      );
+    });
+    expect(saved).toHaveLength(1);
+    expect(saved[0].startsWith("Xword")).toBe(true);
+    unmount();
+    vi.useRealTimers();
+  });
+
+  it("closing the editor before the pause ends still reports what was typed", async () => {
+    vi.useFakeTimers();
+    const seen: string[] = [];
+    const { v, unmount } = await mountEditor(
+      big,
+      (t) => seen.push(t.slice(0, 6)),
+      () => {},
+    );
+    await act(async () => v.dispatch({ changes: { from: 0, insert: "Z" } }));
+    unmount();
+    expect(seen).toEqual(["Zword "]);
+    vi.useRealTimers();
+  });
+
+  it("a normal-size file reports every change at once", async () => {
+    const seen: string[] = [];
+    const { v, unmount } = await mountEditor(
+      "small",
+      (t) => seen.push(t),
+      () => {},
+    );
+    await act(async () => v.dispatch({ changes: { from: 0, insert: "x" } }));
+    expect(seen).toEqual(["xsmall"]);
+    unmount();
+  });
+});

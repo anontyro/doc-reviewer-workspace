@@ -13,14 +13,20 @@ interface Props {
   /** The text to start from. Read once: the editor owns its text after that. */
   initial: string;
   onChange: (text: string) => void;
-  onSave: () => void;
+  /** Called with the editor's current text, so a save right after typing never uses older text. */
+  onSave: (text: string) => void;
 }
+
+/** Above this many characters, copying the whole text on every keystroke gets slow, so changes are reported after a pause. */
+const LARGE = 1_000_000;
+const PAUSE_MS = 300;
 
 /** The Markdown source editor (CodeMirror 6, F3 spec D17). Text is held exactly as the file has it (D20). */
 export default function SourceEditor({ initial, onChange, onSave }: Props) {
   const [start] = useState(initial);
   const { separator, readOnlyReason } = detectEndings(start);
   const host = useRef<HTMLDivElement>(null);
+  const pending = useRef<ReturnType<typeof setTimeout> | null>(null);
   const callbacks = useRef({ onChange, onSave });
   useEffect(() => {
     callbacks.current = { onChange, onSave };
@@ -42,7 +48,18 @@ export default function SourceEditor({ initial, onChange, onSave }: Props) {
           syntaxHighlighting(defaultHighlightStyle),
           search({ top: true }),
           keymap.of([
-            { key: "Mod-s", run: () => (callbacks.current.onSave(), true), preventDefault: true },
+            {
+              key: "Mod-s",
+              run: (v) => {
+                if (pending.current) clearTimeout(pending.current);
+                pending.current = null;
+                const text = v.state.sliceDoc();
+                callbacks.current.onChange(text);
+                callbacks.current.onSave(text);
+                return true;
+              },
+              preventDefault: true,
+            },
             ...formattingKeymap,
             ...searchKeymap,
             ...historyKeymap,
@@ -50,12 +67,26 @@ export default function SourceEditor({ initial, onChange, onSave }: Props) {
           ]),
           // sliceDoc joins lines with the file's own separator, so the text sent to Rust is the file's text.
           EditorView.updateListener.of((u) => {
-            if (u.docChanged) callbacks.current.onChange(u.state.sliceDoc());
+            if (!u.docChanged) return;
+            if (u.state.doc.length <= LARGE) return callbacks.current.onChange(u.state.sliceDoc());
+            if (pending.current) clearTimeout(pending.current);
+            pending.current = setTimeout(() => {
+              pending.current = null;
+              callbacks.current.onChange(u.view.state.sliceDoc());
+            }, PAUSE_MS);
           }),
         ],
       }),
     });
-    return () => view.destroy();
+    return () => {
+      if (pending.current) {
+        // Switching view before the pause ends must not lose what was typed.
+        clearTimeout(pending.current);
+        pending.current = null;
+        callbacks.current.onChange(view.state.sliceDoc());
+      }
+      view.destroy();
+    };
   }, [start, separator, readOnlyReason]);
 
   return (

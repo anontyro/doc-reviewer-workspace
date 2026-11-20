@@ -44,6 +44,9 @@ export class CommandError extends Error {
   }
 }
 
+/** The text of anything that was thrown. */
+export const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
+
 function toError(e: unknown): CommandError {
   if (typeof e === "object" && e !== null && "kind" in e && "message" in e) {
     const { kind, message } = e as { kind: ErrorKind; message: string };
@@ -107,10 +110,13 @@ export type DocStatus =
 export const checkDocument = () => call<DocStatus>("check_document");
 /** Keeps the user's unsaved text as a backup, before they load the disk version (F3 spec D25). */
 export const backupText = (text: string) => call<null>("backup_text", { text });
-export const saveDraft = (text: string, baseHash: string) =>
-  call<null>("save_draft", { text, baseHash });
-export const readDraft = () => call<DraftFile | null>("read_draft");
-export const clearDraft = () => call<null>("clear_draft");
+// Draft calls name the document they are for. Rust has one active document, so a call that arrives after the user
+// switched tabs is refused instead of touching the other document's draft.
+export const saveDraft = (documentId: string, text: string, baseHash: string) =>
+  call<null>("save_draft", { documentId, text, baseHash });
+export const readDraft = (documentId: string) =>
+  call<DraftFile | null>("read_draft", { documentId });
+export const clearDraft = (documentId: string) => call<null>("clear_draft", { documentId });
 
 /** Shows the native dialog. Resolves to null when the user cancels. */
 export const openMarkdown = () => call<OpenedDocument | null>("open_markdown");

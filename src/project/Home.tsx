@@ -1,6 +1,7 @@
 import { useState } from "react";
 import {
   createProject,
+  message,
   openMarkdown,
   openProject,
   openProjectAt,
@@ -10,7 +11,7 @@ import {
   type OpenedDocument,
   type ProjectView,
 } from "../api";
-import { message, timeAgo, useLibrary } from "./useLibrary";
+import { timeAgo, useLibrary } from "./useLibrary";
 
 interface Props {
   onOpenProject: (project: ProjectView) => void;

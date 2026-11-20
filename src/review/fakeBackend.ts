@@ -79,7 +79,7 @@ export function fakeBackend(doc: OpenedDocument) {
       case "save_draft":
         state.draft = {
           schema_version: "1.0.0",
-          document_id: "doc_0123456789abcdef",
+          document_id: a.documentId,
           base_hash: a.baseHash,
           text: a.text,
           saved_at: "2026-11-20T10:00:00Z",

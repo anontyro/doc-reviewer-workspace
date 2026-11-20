@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { listLibrary, type LibraryItem } from "../api";
-
-export const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
+import { listLibrary, message, type LibraryItem } from "../api";
 
 /** "5 minutes ago" for an RFC 3339 time. Older than a month, or unreadable, shows the date part. */
 export function timeAgo(iso: string, now: Date = new Date()): string {
