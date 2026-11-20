@@ -30,6 +30,7 @@ pub fn run() {
             commands::remove_from_library,
             commands::add_document,
             commands::open_project_document,
+            commands::save_document,
             commands::resolve_selection,
             commands::create_annotation,
             commands::list_annotations,

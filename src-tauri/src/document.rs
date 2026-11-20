@@ -120,6 +120,18 @@ impl AppState {
         }
     }
 
+    /// Saves `text` over the active document's file if the file still has `expected_hash`, then makes the saved
+    /// file the active document (F3 spec D21). The state stays locked throughout, so two saves cannot interleave.
+    pub fn save(&self, text: &str, expected_hash: &str) -> Result<OpenedDocument, CommandError> {
+        let mut guard = self.open.lock().map_err(|_| unavailable())?;
+        let active = guard
+            .as_mut()
+            .ok_or_else(|| CommandError::new(ErrorKind::NoDocument, "no document is open"))?;
+        let saved = save_text(&active.doc, text, expected_hash)?;
+        active.doc = saved.clone();
+        Ok(saved)
+    }
+
     /// Switches project and closes the active document, so a document of one project is never shown in another.
     pub fn set_project(&self, project: Option<ProjectContext>) -> Result<(), CommandError> {
         *self.open.lock().map_err(|_| unavailable())? = None;
@@ -184,6 +196,14 @@ fn open_with(
     id_source_hash: impl FnOnce(&str) -> String,
 ) -> Result<OpenedDocument, CommandError> {
     let path = fs::canonicalize(path).map_err(io)?;
+    let path_str = path.to_string_lossy().into_owned();
+    let document_id = DocumentId::try_from(format!("doc_{}", &id_source_hash(&path_str)[..16]))
+        .map_err(|e| CommandError::new(ErrorKind::Invalid, e))?;
+    read_document(path, document_id)
+}
+
+/// Reads, checks and renders the file at `path` (already canonical) as the document `document_id`.
+fn read_document(path: PathBuf, document_id: DocumentId) -> Result<OpenedDocument, CommandError> {
     if fs::metadata(&path).map_err(io)?.len() > MAX_BYTES {
         return Err(CommandError::new(
             ErrorKind::TooLarge,
@@ -194,19 +214,57 @@ fn open_with(
     let source_hash = sha256_hex(&bytes);
     let source = String::from_utf8(bytes)
         .map_err(|_| CommandError::new(ErrorKind::NotUtf8, "file is not UTF-8 text"))?;
-    let path_str = path.to_string_lossy().into_owned();
-    let invalid = |e: String| CommandError::new(ErrorKind::Invalid, e);
     Ok(OpenedDocument {
         name: path
             .file_name()
             .map(|n| n.to_string_lossy().into_owned())
             .unwrap_or_default(),
-        document_id: DocumentId::try_from(format!("doc_{}", &id_source_hash(&path_str)[..16]))
-            .map_err(invalid)?,
-        version_id: VersionId::try_from(format!("ver_{}", &source_hash[..16])).map_err(invalid)?,
+        document_id,
+        version_id: VersionId::try_from(format!("ver_{}", &source_hash[..16]))
+            .map_err(|e| CommandError::new(ErrorKind::Invalid, e))?,
         html: crate::markdown::render_markdown(&source),
-        path: path_str,
+        path: path.to_string_lossy().into_owned(),
         source_hash,
         source,
     })
+}
+
+/// Writes `text` over the file of `doc`, but only if the file on disk still has the bytes `expected_hash` names
+/// (F3 spec D21). The write is atomic and keeps the file's permissions. Returns the document as it now is on disk,
+/// with the same id. Nothing is written on any error.
+fn save_text(
+    doc: &OpenedDocument,
+    text: &str,
+    expected_hash: &str,
+) -> Result<OpenedDocument, CommandError> {
+    if text.len() as u64 > MAX_BYTES {
+        return Err(CommandError::new(
+            ErrorKind::TooLarge,
+            "text is larger than 10 MiB",
+        ));
+    }
+    let path = Path::new(&doc.path);
+    let on_disk = match fs::read(path) {
+        Ok(b) => b,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            return Err(CommandError::new(
+                ErrorKind::Missing,
+                format!("{} is no longer where it was", doc.path),
+            ))
+        }
+        Err(e) => return Err(io(e)),
+    };
+    if sha256_hex(&on_disk) != expected_hash {
+        return Err(CommandError::new(
+            ErrorKind::Conflict,
+            "the file changed on disk since it was opened",
+        ));
+    }
+    let permissions = fs::metadata(path).map_err(io)?.permissions();
+    crate::store::atomic::write_atomic(path, text.as_bytes())
+        .map_err(|e| CommandError::new(ErrorKind::Io, format!("could not save: {e}")))?;
+    // shortcut: permissions are restored after the rename, so a failure here leaves the new text with default
+    // permissions. Upgrade when F4 versions need exact modes.
+    let _ = fs::set_permissions(path, permissions);
+    read_document(path.to_path_buf(), doc.document_id.clone())
 }

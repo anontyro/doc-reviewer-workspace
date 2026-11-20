@@ -36,6 +36,16 @@ pub async fn open_markdown(
     Ok(Some(doc))
 }
 
+/// Saves the editor's text over the active file unless the file changed on disk since `expected_hash` (F3 spec D21).
+#[tauri::command]
+pub fn save_document(
+    state: State<'_, AppState>,
+    text: String,
+    expected_hash: String,
+) -> Result<OpenedDocument, CommandError> {
+    state.save(&text, &expected_hash)
+}
+
 /// Maps a rendered-text selection to the open document's source (F2 spec D5).
 #[tauri::command]
 pub fn resolve_selection(
